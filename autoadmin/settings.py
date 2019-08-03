@@ -45,7 +45,9 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_swagger',
     'users',
-    'servicetree'
+    'groups',
+    'servicetree',
+    'pms'
 ]
 
 MIDDLEWARE = [

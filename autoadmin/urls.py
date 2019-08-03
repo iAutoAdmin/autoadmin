@@ -20,15 +20,17 @@ from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
 from rest_framework.routers import DefaultRouter
 from rest_framework_jwt.views import obtain_jwt_token
 from users.router import user_router
+from groups.router import group_router
 from servicetree.router import servicetree_router
+from pms.router import pms_router
 
 schema_view = get_schema_view(title='API', renderer_classes=[OpenAPIRenderer, SwaggerUIRenderer])
 
 router = DefaultRouter()
 router.registry.extend(user_router.registry)
+router.registry.extend(group_router.registry)
 router.registry.extend(servicetree_router.registry)
-
-
+router.registry.extend(pms_router.registry)
 
 
 urlpatterns = [
