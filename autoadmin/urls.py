@@ -22,12 +22,14 @@ from rest_framework.documentation import include_docs_urls
 from rest_framework.routers import DefaultRouter
 from rest_framework_jwt.views import obtain_jwt_token
 from users.router import user_router
+from servicetree.router import servicetree_router
 
 schema_view = get_schema_view(title='API', renderer_classes=[OpenAPIRenderer, SwaggerUIRenderer])
 
 
 router = DefaultRouter()
 router.registry.extend(user_router.registry)
+router.registry.extend(servicetree_router.registry)
 
 
 
