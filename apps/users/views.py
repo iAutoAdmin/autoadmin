@@ -33,9 +33,15 @@ class UserInfoViewset(viewsets.ViewSet):
         }
         return Response(data)
 
-
-class UsersViewset(viewsets.ModelViewSet):
+class UsersViewset(viewsets.GenericViewSet,
+                   mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.UpdateModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.ListModelMixin):
     """
+    create:
+    添加用户
     retrieve:
     获取用户信息
     list:

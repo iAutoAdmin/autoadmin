@@ -6,16 +6,17 @@ User = get_user_model()
 
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.Serializer):
     """
     用户序列化类
     """
-    username    = serializers.CharField(required=False, read_only=False, max_length=32, label="用户名", help_text="用户名")
-    name        = serializers.CharField(required=False, read_only=False, label="姓名", help_text="姓名")
+    username    = serializers.CharField(required=False, max_length=32, label="用户名", help_text="用户名")
+    name        = serializers.CharField(required=False, label="姓名", help_text="姓名")
+    password = serializers.CharField(required=True,write_only=True, min_length=6, max_length=32,label="密码", help_text="密码")
     is_active   = serializers.BooleanField(required=False, read_only=True, label="登陆状态", default=True, help_text="登陆状态")
-    email       = serializers.CharField(read_only=True, help_text="联系邮箱")
+    email       = serializers.CharField(help_text="联系邮箱")
     last_login  = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True, help_text="上次登录时间")
-    phone       = serializers.CharField(required=False, max_length=11, min_length=11, allow_null=True, help_text="手机号",
+    phone       = serializers.CharField(max_length=11, min_length=11, allow_null=True, help_text="手机号",
                                         error_messages={"max_length":"手机号错误","min_length":"手机号错误"},
                                         )
     def validate_username(self, username):
@@ -25,9 +26,16 @@ class UserSerializer(serializers.ModelSerializer):
         except User.DoesNotExist:
             return username
 
+    def create(self, validated_data):
+        validated_data["is_active"] = False
+        instance = super(UserSerializer, self).create(validated_data=validated_data)
+        instance.set_password(validated_data["password"])
+        instance.save()
+        return instance
+
     class Meta:
         model = User
-        fields = ("id", "username", "name", "phone", "email", "is_active","last_login")
+        fields = ("id", "username", "name", "phone", "email", "is_active","last_login", "password")
 
 class UserRegSerializer(serializers.ModelSerializer):
     """
