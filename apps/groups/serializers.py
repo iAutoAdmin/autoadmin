@@ -32,7 +32,6 @@ class GroupSerializer(serializers.ModelSerializer):
         nodes = self.get_node(instance.node_group.all())
         permissions = self.get_permissions(instance.pms_group.all())
         member = self.get_users(instance.user_set.all())
-        # member = instance.user_set.all()
         ret = super(GroupSerializer, self).to_representation(instance)
         ret["nodes"] = nodes
         ret["permissions"] = permissions

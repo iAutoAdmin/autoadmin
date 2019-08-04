@@ -48,14 +48,30 @@ class GroupMembersViewset(mixins.RetrieveModelMixin,
                           mixins.DestroyModelMixin,
                           viewsets.GenericViewSet):
     """
-    向指定组添加用户
+    update:
+    向指定组添加用户,example: {"pid": [1,2,]}
+    partial_update:
+    向指定组添加用户,example: {"pid": [1,2,]}
     retrieve:
     返回指定组的用户列表
     destroy:
-    从指定组里删除用户
+    从指定组里删除用户,example: {"pid": [1,2,]}
     """
     queryset = Group.objects.all()
     serializer_class = UserSerializer
+
+    def update(self, request, *args, **kwargs):
+        ret = {"status": 0}
+        group_obj = self.get_object()
+        print(kwargs)
+        userobj = get_user_obj(request.data.get("uid", 0))
+        if userobj is None:
+            ret["status"] = 1
+            ret["errmsg"] = "用户错误"
+        else:
+            for id in userobj:
+                group_obj.user_set.add(id)
+        return Response(ret, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -75,7 +91,7 @@ class GroupMembersViewset(mixins.RetrieveModelMixin,
     def destroy(self, request, *args, **kwargs):
         ret = {"status": 0}
         group_obj = self.get_object()
-        userobj = get_user_obj(request.data.getlist("uid", 0))
+        userobj = get_user_obj(request.data.get("uid", 0))
         if userobj is None:
             ret["status"] = 1
             ret["errmsg"] = "用户错误"
@@ -90,13 +106,14 @@ class GroupPermissionViewset(mixins.RetrieveModelMixin,
                              mixins.DestroyModelMixin,
                              viewsets.GenericViewSet):
     """
-    向指定组里添加权限
     retrieve:
     返回指定组的权限列表
     update:
-    向指定组里添加权限
+    向指定组里添加权限,example: {"pid": [1,2,]}
+    partial_update:
+    向指定组里添加权限,example: {"pid": [1,2,]}
     destroy:
-    从指定组里删除权限
+    从指定组里删除权限,example: {"pid": [1,2,]}
     """
     queryset = Group.objects.all()
     serializer_class = PermissionSerializer
@@ -119,7 +136,7 @@ class GroupPermissionViewset(mixins.RetrieveModelMixin,
     def update(self, request, *args, **kwargs):
         ret = {"status": 0}
         group_obj = self.get_object()
-        per_obj = get_permission_obj(request.data.getlist("pid", 0))
+        per_obj = get_permission_obj(request.data.get("pid", 0))
         if per_obj is None:
             ret["status"] = 1
             ret["errmsg"] = "权限错误"
@@ -131,7 +148,7 @@ class GroupPermissionViewset(mixins.RetrieveModelMixin,
     def destroy(self, request, *args, **kwargs):
         ret = {"status": 0}
         group_obj = self.get_object()
-        per_obj = get_permission_obj(request.data.getlist("pid", 0))
+        per_obj = get_permission_obj(request.data.get("pid", 0))
         if per_obj is None:
             ret["status"] = 1
             ret["errmsg"] = "权限错误"
