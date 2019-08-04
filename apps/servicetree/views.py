@@ -33,7 +33,7 @@ class NodeInfoViewSet(viewsets.ModelViewSet):
 class NodeInfoManageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     list:
-    Nodeinfo信息展示
+    返回所有服务树列表信息
     """
     pagination_class = PageNumberPagination
     queryset = NodeInfo.objects.all()
