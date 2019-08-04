@@ -48,6 +48,8 @@ class UsersViewset(viewsets.GenericViewSet,
     获取用户列表
     update:
     更新用户信息
+    partial_update:
+    更新用户信息
     delete:
     删除用户
     """

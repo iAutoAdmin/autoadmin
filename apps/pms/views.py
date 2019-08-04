@@ -43,17 +43,18 @@ class AuthPerViewSet(viewsets.ReadOnlyModelViewSet):
 
 class PermissionViewSet(viewsets.ModelViewSet):
     """
-    权限列表 试图类
     list:
-    返回权限列表
+    获取权限列表
     update:
     更新权限信息
     destroy:
-    删除权限记录
+    删除权限信息
     create:
-    创建权限资源
+    创建权限
     partial_update:
-    更新部分字段
+    更新权限信息
+    retrieve:
+    获取权限信息
     """
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer
