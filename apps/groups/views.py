@@ -49,13 +49,13 @@ class GroupMembersViewset(mixins.RetrieveModelMixin,
                           viewsets.GenericViewSet):
     """
     update:
-    向指定组添加用户,example: {"pid": [1,2,]}
+    向指定组添加用户,example: {"uid": [1,2,]}
     partial_update:
-    向指定组添加用户,example: {"pid": [1,2,]}
+    向指定组添加用户,example: {"uid": [1,2,]}
     retrieve:
     返回指定组的用户列表
     destroy:
-    从指定组里删除用户,example: {"pid": [1,2,]}
+    从指定组里删除用户,example: {"uid": [1,2,]}
     """
     queryset = Group.objects.all()
     serializer_class = UserSerializer
