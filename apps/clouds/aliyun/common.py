@@ -8,6 +8,7 @@ from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkslb.request.v20140515.DescribeRegionsRequest import DescribeRegionsRequest
 from aliyunsdkslb.request.v20140515.DescribeLoadBalancersRequest import DescribeLoadBalancersRequest
 
+
 class ALiYun(object):
     def __init__(self):
         self.accessKeyId = accessKeyId
@@ -47,6 +48,7 @@ class ALiYun(object):
             return balancers
         except Exception as ex:
             print(ex)
+
 
 if __name__ == '__main__':
     ali = ALiYun()
