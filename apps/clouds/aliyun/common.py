@@ -5,20 +5,36 @@ from autoadmin.settings import accessKeyId, accessSecret
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.acs_exception.exceptions import ClientException
 from aliyunsdkcore.acs_exception.exceptions import ServerException
+from aliyunsdkecs.request.v20140526.DescribeZonesRequest import DescribeZonesRequest
+from aliyunsdkecs.request.v20140526.DescribeAvailableResourceRequest import DescribeAvailableResourceRequest
 from aliyunsdkslb.request.v20140515.DescribeRegionsRequest import DescribeRegionsRequest
 from aliyunsdkslb.request.v20140515.DescribeLoadBalancersRequest import DescribeLoadBalancersRequest
 from aliyunsdkslb.request.v20140515.DescribeLoadBalancerAttributeRequest import DescribeLoadBalancerAttributeRequest
 from aliyunsdkecs.request.v20140526.DescribeInstancesRequest import DescribeInstancesRequest
-
+from aliyunsdkecs.request.v20140526.DescribeInstanceTypesRequest import DescribeInstanceTypesRequest
+from aliyunsdkecs.request.v20140526.DescribeInstanceTypeFamiliesRequest import DescribeInstanceTypeFamiliesRequest
 
 class ALiYun(object):
     def __init__(self):
         self.accessKeyId = accessKeyId
         self.accessSecret = accessSecret
 
+    def get_zone(self, RegionId):
+        """
+        查询RegionId下的可用区，根据ZoneId判断LocalName
+        :param RegionId:
+        :return:
+        """
+        client = AcsClient(self.accessKeyId, self.accessSecret, RegionId)
+        request = DescribeZonesRequest()
+        request.set_accept_format('json')
+        response = client.do_action_with_exception(request)
+        res = str(response, encoding='utf-8')
+        return json.loads(res).get("Zones").get("Zone")
+
     def get_regions(self):
         """
-        获取所有可用区regionId
+        获取所有地域regionId
         :return:
         """
         regions = []
@@ -77,16 +93,35 @@ class ALiYun(object):
                 request = DescribeInstancesRequest()
                 request.set_accept_format('json')
                 response = client.do_action_with_exception(request)
+                # print(str(response, encoding='utf-8'))
                 res = json.loads(str(response, encoding='utf-8'))
                 instances += res['Instances']['Instance']
             return instances
         except Exception as ex:
             return ex
 
+    def get_instancetype(self, RegionId):
+        """
+        查看ECS实例规格信息
+        :param RegionId:
+        :return:
+        """
+        client = AcsClient(self.accessKeyId, self.accessSecret, RegionId)
+        request = DescribeInstanceTypesRequest()
+        request.set_accept_format('json')
+        request.set_InstanceTypeFamily("ecs.t5")
+        response = client.do_action_with_exception(request)
+        res = str(response, encoding='utf-8')
+        return json.loads(res).get("InstanceTypes").get("InstanceType")
 
 if __name__ == '__main__':
     ali = ALiYun()
     # ali.get_regions()
     # print(ali.get_slb())
     # print(ali.get_slb_detail("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
-    print(ali.get_ecs())
+    # print(ali.get_ecs())
+    # res = ali.get_zone("cn-beijing")
+    # ali.get_instancetype()
+    # res = ali.get_instancetype("cn-beijing")
+    # for i in res:
+    #     print(i["CpuCoreCount"],i["MemorySize"])
