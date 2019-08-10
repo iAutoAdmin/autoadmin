@@ -5,6 +5,19 @@ from rest_framework import serializers
 User = get_user_model()
 
 
+class GroupMembersSerizlizer(serializers.Serializer):
+    uids = serializers.ListField(required=True)
+
+    def validate_uids(self, uids):
+        userIds = []
+        objs = User.objects.filter(pk__in=uids)
+        for obj in objs:
+            userIds.append(str(obj.id))
+        if userIds != uids:
+            raise serializers.ValidationError("uid 错误")
+        return objs
+
+
 class GroupSerializer(serializers.ModelSerializer):
     """
     用户组序列化类
@@ -28,15 +41,15 @@ class GroupSerializer(serializers.ModelSerializer):
             ret.append(u.username)
         return ret
 
-    def to_representation(self, instance):
-        nodes = self.get_node(instance.node_group.all())
-        permissions = self.get_permissions(instance.pms_group.all())
-        member = self.get_users(instance.user_set.all())
-        ret = super(GroupSerializer, self).to_representation(instance)
-        ret["nodes"] = nodes
-        ret["permissions"] = permissions
-        ret["member"] = member
-        return ret
+    # def to_representation(self, instance):
+    #     nodes = self.get_node(instance.node_group.all())
+    #     permissions = self.get_permissions(instance.pms_group.all())
+    #     member = self.get_users(instance.user_set.all())
+    #     ret = super(GroupSerializer, self).to_representation(instance)
+    #     ret["nodes"] = nodes
+    #     ret["permissions"] = permissions
+    #     ret["member"] = member
+    #     return ret
 
     class Meta:
         model = Group

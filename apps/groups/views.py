@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, mixins, status
 from rest_framework.response import Response
 from django.contrib.auth.models import Group
-from .serializers import GroupSerializer
+from .serializers import GroupSerializer, GroupMembersSerizlizer
 from users.serializers import UserSerializer
 from pms.serializers import PermissionSerializer
 from .filter import GroupFilter
@@ -43,62 +43,46 @@ class GroupViewset(mixins.CreateModelMixin,
         return queryset
 
 
-class GroupMembersViewset(mixins.RetrieveModelMixin,
-                          mixins.UpdateModelMixin,
-                          mixins.DestroyModelMixin,
-                          viewsets.GenericViewSet):
+class GroupMembersViewset(viewsets.GenericViewSet):
     """
-    update:
-    向指定组添加用户,example: {"uid": [1,2,]}
-    partial_update:
-    向指定组添加用户,example: {"uid": [1,2,]}
+    组成员管理
     retrieve:
-    返回指定组的用户列表
+    返回指定组的成员列表
+    update:
+    往指定组里添加成员
     destroy:
-    从指定组里删除用户,example: {"uid": [1,2,]}
+    从指定组里删除成员
     """
+    serializer_class = GroupMembersSerizlizer
     queryset = Group.objects.all()
-    serializer_class = UserSerializer
 
-    def update(self, request, *args, **kwargs):
-        ret = {"status": 0}
-        group_obj = self.get_object()
-        print(kwargs)
-        userobj = get_user_obj(request.data.get("uid", 0))
-        if userobj is None:
-            ret["status"] = 1
-            ret["errmsg"] = "用户错误"
-        else:
-            for id in userobj:
-                group_obj.user_set.add(id)
-        return Response(ret, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        queryset = instance.user_set.all()
-        username = request.GET.get("username", None)
-        if username is not None:
-            queryset = queryset.filter(Q(name__icontains=username) | Q(username__icontains=username))
-        queryset = self.filter_queryset(queryset)
+
+        queryset = self.filter_queryset(instance.user_set.all())
+
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = UserSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = UserSerializer(queryset, many=True)
         return Response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance.user_set.add(*serializer.data["uids"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     def destroy(self, request, *args, **kwargs):
-        ret = {"status": 0}
-        group_obj = self.get_object()
-        userobj = get_user_obj(request.data.get("uid", 0))
-        if userobj is None:
-            ret["status"] = 1
-            ret["errmsg"] = "用户错误"
-        else:
-            for id in userobj:
-                group_obj.user_set.remove(id)
-        return Response(ret, status=status.HTTP_200_OK)
+        instance = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance.user_set.remove(*serializer.data["uids"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class GroupPermissionViewset(mixins.RetrieveModelMixin,

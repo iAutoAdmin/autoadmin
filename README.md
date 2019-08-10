@@ -5,6 +5,7 @@
 ```shell script
 python manage.py makemigrations users
 python manage.py makemigrations servicetree
+python manage.py makemigrations pms
 python manage.py migrate
 ```
 
