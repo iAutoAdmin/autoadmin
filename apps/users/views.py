@@ -1,31 +1,17 @@
 from django.contrib.auth import get_user_model
-from rest_framework import viewsets, mixins, permissions
+from rest_framework import viewsets, permissions
 from rest_framework.response import Response
-from .serializers import UserSerializer, UserRegSerializer
+from .serializers import UserSerializer
 from .filters import UserFilter
 
 User = get_user_model()
-
-
-
-class UserRegViewset(mixins.CreateModelMixin,
-                     mixins.UpdateModelMixin,
-                     viewsets.GenericViewSet):
-    """
-    create:
-    创建用户
-
-    update:
-    修改密码
-    """
-    queryset = User.objects.all()
-    serializer_class = UserRegSerializer
 
 
 class UserInfoViewset(viewsets.ViewSet):
     """
     获取当前登陆的用户信息
     """
+    permission_classes = (permissions.IsAuthenticated,)
     def list(self, request, *args, **kwargs):
         data = {
             "username": self.request.user.username,
@@ -33,12 +19,7 @@ class UserInfoViewset(viewsets.ViewSet):
         }
         return Response(data)
 
-class UsersViewset(viewsets.GenericViewSet,
-                   mixins.CreateModelMixin,
-                   mixins.RetrieveModelMixin,
-                   mixins.UpdateModelMixin,
-                   mixins.DestroyModelMixin,
-                   mixins.ListModelMixin):
+class UsersViewset(viewsets.ModelViewSet):
     """
     create:
     添加用户
@@ -57,8 +38,3 @@ class UsersViewset(viewsets.GenericViewSet,
     serializer_class = UserSerializer
     filter_class = UserFilter
     filter_fields = ("username",)
-
-    def get_queryset(self):
-        queryset = super(UsersViewset, self).get_queryset()
-        queryset = queryset.order_by("id")
-        return queryset

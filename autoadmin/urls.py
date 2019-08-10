@@ -37,5 +37,5 @@ urlpatterns = [
     url(r'^docs/$', schema_view, name='docs'),
     url(r'^', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^/api-token-auth/aaaa/', obtain_jwt_token, name="api token")
+    url(r'^api-token-auth/', obtain_jwt_token),
 ]

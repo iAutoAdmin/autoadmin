@@ -4,4 +4,4 @@ from .views import NodeInfoManageViewSet, NodeInfoViewSet
 
 servicetree_router = DefaultRouter()
 servicetree_router.register("servicetree/node", NodeInfoViewSet, base_name='node')
-servicetree_router.register("servicetree/nodemanage", NodeInfoManageViewSet, base_name='nodemanage')
+servicetree_router.register("servicetreemgr", NodeInfoManageViewSet, base_name='nodemanage')

@@ -10,6 +10,7 @@ class UserSerializer(serializers.Serializer):
     """
     用户序列化类
     """
+    id = serializers.IntegerField(read_only=True)
     username    = serializers.CharField(required=False, max_length=32, label="用户名", help_text="用户名")
     name        = serializers.CharField(required=False, label="姓名", help_text="姓名")
     password = serializers.CharField(required=True,write_only=True, min_length=6, max_length=32,label="密码", help_text="密码")
@@ -28,42 +29,24 @@ class UserSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         validated_data["is_active"] = False
-        instance = super(UserSerializer, self).create(validated_data=validated_data)
+        instance = User()
+        instance.username = validated_data["username"]
+        instance.name = validated_data["name"]
+        instance.phone = validated_data["phone"]
+        instance.email = validated_data["email"]
+        instance.is_active = True
         instance.set_password(validated_data["password"])
+        instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        if validated_data.get("phone", None):
+            instance.phone = validated_data["phone"]
+        if validated_data.get("password", None):
+            instance.set_password(validated_data["password"])
         instance.save()
         return instance
 
     class Meta:
         model = User
         fields = ("id", "username", "name", "phone", "email", "is_active","last_login", "password")
-
-class UserRegSerializer(serializers.ModelSerializer):
-    """
-    用户注册序列化类
-    """
-    id       = serializers.IntegerField(read_only=True)
-    name     = serializers.CharField(max_length=32, label="姓名", help_text="用户姓名，中文姓名")
-    username = serializers.CharField(max_length=32, label="用户名", help_text="用户名，用户登陆名")
-    password = serializers.CharField(style={"input_type": "password"}, label="密码", write_only=True, help_text="密码")
-    phone    = serializers.CharField(max_length=11, min_length=11, label="手机号", required=False,
-                                     allow_null=True, allow_blank=True, help_text="手机号")
-
-    def create(self, validated_data):
-        validated_data["is_active"] = False
-        instance = super(UserRegSerializer, self).create(validated_data=validated_data)
-        instance.email = "{}{}".format(instance.username, settings.DOMAIN)
-
-        instance.set_password(validated_data["password"])
-        instance.save()
-        return instance
-
-    def update(self, instance, validated_data):
-        password =  validated_data.get("password", None)
-        if password:
-            instance.set_password(password)
-            instance.save()
-        return instance
-
-    class Meta:
-        model = User
-        fields = ("username", "password", "name", "id", "phone")
