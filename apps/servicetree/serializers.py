@@ -1,14 +1,10 @@
 from rest_framework import serializers
-from .models import NodeInfo
+from .models import Node
 
-class NodeInfoSerializer(serializers.ModelSerializer):
+class NodeSerializer(serializers.ModelSerializer):
     """
     NodeInfo序列化类
     """
-
-    def to_representation(self, instance):
-        ret = super(NodeInfoSerializer, self).to_representation(instance)
-        return ret
 
     def validate_pid(self, pid):
         """
@@ -16,23 +12,14 @@ class NodeInfoSerializer(serializers.ModelSerializer):
         """
         if pid > 0:
             try:
-                node_obj = NodeInfo.objects.get(pk=pid)
-                if node_obj.pid != 0 or node_obj:
-                    # return serializers.ValidationError("上级菜单错误")
-                    return pid
-            except NodeInfo.DoesNotExist:
+                Node.objects.get(pk=pid)
+                return pid
+            except Node.DoesNotExist:
                 return serializers.ValidationError("上级菜单不存在")
-            return pid
         else:
             return 0
 
-    def update(self, instance, validated_data):
-        instance.node_name = validated_data.get("node_name", instance.node_name)
-        instance.pid = validated_data.get("pid", instance.pid)
-        instance.path_node = validated_data.get("path_node", instance.path_node)
-        instance.save()
-        return instance
-
     class Meta:
-        model = NodeInfo
-        fields = ('id', 'node_name', 'pid', 'path_node')
+        model = Node
+        fields = ('id', 'name', 'pid', 'path', 'op', 'rd')
+        read_only_fields = ('path','id')

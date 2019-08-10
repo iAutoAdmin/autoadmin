@@ -3,18 +3,18 @@ from django.shortcuts import render
 # Create your views here.
 
 from rest_framework import viewsets, mixins, response, status, permissions
-from .models import NodeInfo
-from .serializers import NodeInfoSerializer
-from rest_framework.pagination import PageNumberPagination
-from .filter import NodeinfoFilter
+from .models import Node
+from .serializers import NodeSerializer
 
 
-class NodeInfoViewSet(viewsets.ModelViewSet):
+class NodeViewSet(mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.UpdateModelMixin,
+                   mixins.DestroyModelMixin,
+                   viewsets.GenericViewSet):
     """
     retrieve:
     返回指定Node信息
-    list:
-    返回Node列表
     update:
     更新Node信息
     destroy:
@@ -24,57 +24,35 @@ class NodeInfoViewSet(viewsets.ModelViewSet):
     partial_update:
     更新部分字段
     """
-    queryset = NodeInfo.objects.all()
-    serializer_class = NodeInfoSerializer
-    filter_class = NodeinfoFilter
-    filter_fields = ("node_name")
+    queryset = Node.objects.all()
+    serializer_class = NodeSerializer
 
 
-class NodeInfoManageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+
+class ServiceTreeViewSet(viewsets.GenericViewSet):
     """
     list:
     返回所有服务树列表信息
     """
-    pagination_class = PageNumberPagination
-    queryset = NodeInfo.objects.all()
-
-    # permission_classes = (permissions.IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
-        data = self.get_nodeinfo()
+        data = self.get_tree()
         return response.Response(data)
 
-    def get_nodeinfo(self):
-        ret = []
+    def get_tree(self):
+        return self.get_child_node(0)
 
-        for obj in self.queryset.filter(pid=0):
-            # print(obj.id, obj.node_name)
+    def get_child_node(self, pid):
+        ret = []
+        for obj in Node.objects.filter(pid__exact=pid):
             node = self.get_node(obj)
-            node["children"] = self.get_children(obj.id)
+            node["children"] = self.get_child_node(obj.id)
             ret.append(node)
         return ret
 
-    def get_children(self, pid):
-        ret = []
-        nodes = NodeInfo.objects.filter(pid=pid)
-        if len(nodes) == 0:
-            return ret
-
-        for child in NodeInfo.objects.filter(pid=pid):
-            node = self.get_node(child)
-            ret.append(node)
-            children = self.get_children(child.id)
-            if children:  # 如果存在子节点则加入列表
-                node["children"] = children
-            elif len(children) == 0:
-                del node["children"]  # 删除node字典中children字段
-        return ret
-
-    def get_node(self, product_obj):
+    def get_node(self, obj):
         node = {}
-        node["id"] = product_obj.id
-        node["label"] = product_obj.node_name
-        node["pid"] = product_obj.pid
-        node["path_node"] = product_obj.path_node
-        node["children"] = []
+        node["id"] = obj.id
+        node["label"] = obj.name
+        node["pid"] = obj.pid
         return node

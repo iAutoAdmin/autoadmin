@@ -1,7 +1,6 @@
 from rest_framework.routers import DefaultRouter
-from .views import NodeInfoManageViewSet, NodeInfoViewSet
-
+from .views import ServiceTreeViewSet, NodeViewSet
 
 servicetree_router = DefaultRouter()
-servicetree_router.register("servicetree/node", NodeInfoViewSet, base_name='node')
-servicetree_router.register("servicetreemgr", NodeInfoManageViewSet, base_name='nodemanage')
+servicetree_router.register("servicetree/node", NodeViewSet, base_name='node')
+servicetree_router.register("servicetree", ServiceTreeViewSet, base_name='nodemanage')
