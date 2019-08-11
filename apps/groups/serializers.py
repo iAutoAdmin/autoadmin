@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from pms.models import Permission
 from rest_framework import serializers
 
 User = get_user_model()
@@ -15,6 +16,18 @@ class GroupMembersSerizlizer(serializers.Serializer):
             userIds.append(str(obj.id))
         if userIds != uids:
             raise serializers.ValidationError("uid 错误")
+        return objs
+
+class GroupPermissionSerizlizer(serializers.Serializer):
+    pids = serializers.ListField(required=True)
+
+    def validate_uids(self, pids):
+        perIds = []
+        objs = Permission.objects.filter(pk__in=pids)
+        for obj in objs:
+            perIds.append(str(obj.id))
+        if perIds != pids:
+            raise serializers.ValidationError("pid 错误")
         return objs
 
 

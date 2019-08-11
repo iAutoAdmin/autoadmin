@@ -1,7 +1,7 @@
 from rest_framework import viewsets, permissions, mixins, status
 from rest_framework.response import Response
 from django.contrib.auth.models import Group
-from .serializers import GroupSerializer, GroupMembersSerizlizer
+from .serializers import GroupSerializer, GroupMembersSerizlizer, GroupPermissionSerizlizer
 from users.serializers import UserSerializer
 from pms.serializers import PermissionSerializer
 from .filter import GroupFilter
@@ -85,58 +85,43 @@ class GroupMembersViewset(viewsets.GenericViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class GroupPermissionViewset(mixins.RetrieveModelMixin,
-                             mixins.UpdateModelMixin,
-                             mixins.DestroyModelMixin,
-                             viewsets.GenericViewSet):
+class GroupPermissionViewset(viewsets.GenericViewSet):
     """
     retrieve:
     返回指定组的权限列表
     update:
-    向指定组里添加权限,example: {"pid": [1,2,]}
+    向指定组里添加权限
     partial_update:
-    向指定组里添加权限,example: {"pid": [1,2,]}
+    向指定组里添加权限
     destroy:
-    从指定组里删除权限,example: {"pid": [1,2,]}
+    从指定组里删除权限
     """
     queryset = Group.objects.all()
-    serializer_class = PermissionSerializer
+    serializer_class = GroupPermissionSerizlizer
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        queryset = instance.pms_group.all()
-        codename = request.GET.get("codename", None)
-        if codename is not None:
-            queryset = queryset.filter(codename__icontains=codename)
-        queryset = self.filter_queryset(queryset)
+
+        queryset = self.filter_queryset(instance.pms_group.all())
+
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = PermissionSerializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = PermissionSerializer(queryset, many=True)
         return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        ret = {"status": 0}
-        group_obj = self.get_object()
-        per_obj = get_permission_obj(request.data.get("pid", 0))
-        if per_obj is None:
-            ret["status"] = 1
-            ret["errmsg"] = "权限错误"
-        else:
-            for id in per_obj:
-                group_obj.pms_group.add(id)
-        return Response(ret, status=status.HTTP_200_OK)
+        instance = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance.pms_group.add(*serializer.data["pids"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def destroy(self, request, *args, **kwargs):
-        ret = {"status": 0}
-        group_obj = self.get_object()
-        per_obj = get_permission_obj(request.data.get("pid", 0))
-        if per_obj is None:
-            ret["status"] = 1
-            ret["errmsg"] = "权限错误"
-        else:
-            for id in per_obj:
-                group_obj.pms_group.remove(id)
-        return Response(ret, status=status.HTTP_200_OK)
+        instance = self.get_object()
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        instance.pms_group.remove(*serializer.data["pids"])
+        return Response(status=status.HTTP_204_NO_CONTENT)
