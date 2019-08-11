@@ -39,6 +39,7 @@ class CloudHost(models.Model):
     gpu = models.IntegerField("GPU", max_length=12, default=None, help_text="GPU")
     create_time = models.CharField("创建时间",  help_text="创建时间")
     expire_time = models.CharField("过期时间", help_text="过期时间")
+    status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已删除')
 
     def __str__(self):
         return "{}".format(self.host_name)
