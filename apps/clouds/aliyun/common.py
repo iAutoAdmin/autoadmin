@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 import json
+import os
 from autoadmin.settings import ACCCESSKEYID, ACCESSSECRET
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.acs_exception.exceptions import ClientException
@@ -18,8 +19,8 @@ from aliyunsdkecs.request.v20140526.DescribeDisksRequest import DescribeDisksReq
 
 class ALiYun(object):
     def __init__(self):
-        self.accessKeyId = ACCCESSKEYID
-        self.accessSecret = ACCESSSECRET
+        self.accessKeyId = os.environ.get("ACCCESSKEYID", '')
+        self.accessSecret = os.environ.get("ACCESSSECRET", '')
 
     def get_regions(self):
         """

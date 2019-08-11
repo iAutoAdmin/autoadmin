@@ -147,5 +147,5 @@ REST_FRAMEWORK = {
 LOGIN_URL = 'rest_framework:login'
 LOGOUT_URL = 'rest_framework:logout'
 
-ACCCESSKEYID = "LTAIBDEvWKWEDlBj"
-ACCESSSECRET = "PGmmflNqjz5JnS5lILEEto3KqTAbi3"
+ACCCESSKEYID = os.environ.get("ACCCESSKEYID", '')
+ACCESSSECRET = os.environ.get("ACCESSSECRET", '')
