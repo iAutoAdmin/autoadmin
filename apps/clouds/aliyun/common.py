@@ -19,8 +19,8 @@ from aliyunsdkecs.request.v20140526.DescribeDisksRequest import DescribeDisksReq
 
 class ALiYun(object):
     def __init__(self):
-        self.accessKeyId = os.environ.get("ACCCESSKEYID", '')
-        self.accessSecret = os.environ.get("ACCESSSECRET", '')
+        self.accessKeyId = ACCCESSKEYID
+        self.accessSecret = ACCESSSECRET
 
     def get_regions(self):
         """
