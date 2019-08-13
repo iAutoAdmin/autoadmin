@@ -30,14 +30,8 @@ class CloudInstanceViewset(mixins.RetrieveModelMixin,
     """
     list:
     获取实例列表
-    update:
-    更新实例
     destroy:
     删除实例
-    create:
-    创建云厂商
-    partial_update:
-    更新实例
     retrieve:
     获取实例详细信息
     """
