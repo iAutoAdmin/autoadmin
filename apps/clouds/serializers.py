@@ -16,6 +16,15 @@ class InstanceSerializer(serializers.ModelSerializer):
     """
     主机序列化类
     """
+    def to_representation(self, instance):
+        ret = super(InstanceSerializer, self).to_representation(instance)
+        if instance.vpc_id == "vpc":
+            ret['vpc_id'] = "私有网络"
+        if instance.instance_charge_type == "PrePaid":
+            ret['instance_charge_type'] = "包年包月"
+        if instance.ioOptimized == "True":
+            ret['ioOptimized'] = "I/O优化"
+        return ret
 
     class Meta:
         model = Instances

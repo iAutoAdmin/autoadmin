@@ -24,10 +24,9 @@ class ManufacturerViewset(viewsets.ModelViewSet):
 
 
 class CloudInstanceViewset(mixins.RetrieveModelMixin,
-                       mixins.UpdateModelMixin,
-                       mixins.DestroyModelMixin,
-                       mixins.ListModelMixin,
-                       viewsets.GenericViewSet):
+                           mixins.DestroyModelMixin,
+                           mixins.ListModelMixin,
+                           viewsets.GenericViewSet):
     """
     list:
     获取实例列表
