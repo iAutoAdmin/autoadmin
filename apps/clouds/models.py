@@ -15,9 +15,8 @@ class Manufacturer(models.Model):
 
 
 class Instances(models.Model):
-    created_at = models.DateTimeField("创建时间", help_text="创建时间")
+    created_at = models.DateTimeField("创建时间", auto_now_add=True, help_text="创建时间")
     updated_at = models.DateTimeField("更新时间", auto_now=True, help_text="更新时间")
-    deleted_at = models.DateTimeField("删除时间", help_text="删除时间")
     cloud_id = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, verbose_name="云厂商", help_text="云厂商")
     resource_id = models.CharField("资源id", max_length=255, default=None, unique=True, help_text="资源id")
     region_id = models.CharField("地域名称", max_length=255, default=None, help_text="地域名称")
@@ -37,6 +36,7 @@ class Instances(models.Model):
     instance_charge_type = models.CharField("付费类型", max_length=64, default="包年包月", help_text="付费类型")
     host_name = models.CharField("主机名称", max_length=64, default=None, help_text="主机名称")
     gpu = models.CharField("GPU", max_length=64,  default=None, help_text="GPU")
+    ioOptimized = models.CharField("IO优化", max_length=64,  default=None, help_text="IO优化")
     create_time = models.CharField("创建时间", max_length=64,  help_text="创建时间")
     expire_time = models.CharField("过期时间", max_length=64, help_text="过期时间")
     status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已删除')
