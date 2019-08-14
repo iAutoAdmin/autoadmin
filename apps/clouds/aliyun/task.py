@@ -60,9 +60,9 @@ def sync_instances(manufacturer):
                         host_obj.instance_name = instance.get('InstanceName')
                         host_obj.os_name = instance.get('OSName')
                         host_obj.zone_id = instance.get("ZoneId")
-                        host_obj.public_ip = instance.get('VpcAttributes').get('PrivateIpAddress').get('IpAddress', "")[
+                        host_obj.private_ip = instance.get('VpcAttributes').get('PrivateIpAddress').get('IpAddress', "")[
                             0]
-                        host_obj.private_ip = instance.get('PublicIpAddress').get('IpAddress', "")[0]
+                        host_obj.public_ip = instance.get('PublicIpAddress').get('IpAddress', "")[0]
                         host_obj.e_ip = instance.get("EipAddress", "")
                         host_obj.instance_status = instance.get('Status')
                         host_obj.vpc_id = instance.get('InstanceNetworkType')
@@ -86,10 +86,10 @@ def sync_instances(manufacturer):
                                                  os_name=instance.get('OSName'),
                                                  zone_id=instance.get("ZoneId"),
                                                  instance_id=instance.get('InstanceId'),
-                                                 public_ip=
+                                                 private_ip=
                                                  instance.get('VpcAttributes').get('PrivateIpAddress').get(
                                                      'IpAddress', "")[0],
-                                                 private_ip=instance.get('PublicIpAddress').get('IpAddress', "")[0],
+                                                 public_ip=instance.get('PublicIpAddress').get('IpAddress', "")[0],
                                                  e_ip=instance.get('PublicIpAddress').get("EipAddress_IpAddress", "")[0],
                                                  instance_status=instance.get('Status'),
                                                  vpc_id=instance.get('InstanceNetworkType'),
