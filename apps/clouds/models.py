@@ -35,11 +35,11 @@ class Instances(models.Model):
     band_width_out = models.CharField("网络出口带宽", max_length=64, null=True, blank=True, help_text="网络出口带宽")
     instance_charge_type = models.CharField("付费类型", max_length=64, default="包年包月", help_text="付费类型")
     host_name = models.CharField("主机名称", max_length=64, default=None, help_text="主机名称")
-    gpu = models.CharField("GPU", max_length=64,  default=None, help_text="GPU")
+    gpu = models.CharField("GPU个数", max_length=64,  default=None, help_text="GPU个数")
     ioOptimized = models.CharField("IO优化", max_length=64,  default=None, help_text="IO优化")
     create_time = models.CharField("创建时间", max_length=64,  help_text="创建时间")
     expire_time = models.CharField("过期时间", max_length=64, help_text="过期时间")
-    status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已下线,3:已删除')
+    status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已删除')
 
     def __str__(self):
         return "{}".format(self.host_name)
