@@ -90,7 +90,7 @@ def sync_instances(manufacturer):
                                                  instance.get('VpcAttributes').get('PrivateIpAddress').get(
                                                      'IpAddress', "")[0],
                                                  private_ip=instance.get('PublicIpAddress').get('IpAddress', "")[0],
-                                                 e_ip=instance.get("EipAddress", ""),
+                                                 e_ip=instance.get('PublicIpAddress').get("EipAddress_IpAddress", "")[0],
                                                  instance_status=instance.get('Status'),
                                                  vpc_id=instance.get('InstanceNetworkType'),
                                                  cpu_num=instance.get('Cpu'),
