@@ -24,6 +24,7 @@ class InstanceSerializer(serializers.ModelSerializer):
             ret['instance_charge_type'] = "包年包月"
         if instance.ioOptimized == "True":
             ret['ioOptimized'] = "I/O优化"
+        ret['cloud_id'] = instance.cloud_id.vendor_name
         return ret
 
     class Meta:

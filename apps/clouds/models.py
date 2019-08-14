@@ -39,7 +39,7 @@ class Instances(models.Model):
     ioOptimized = models.CharField("IO优化", max_length=64,  default=None, help_text="IO优化")
     create_time = models.CharField("创建时间", max_length=64,  help_text="创建时间")
     expire_time = models.CharField("过期时间", max_length=64, help_text="过期时间")
-    status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已删除')
+    status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已下线,3:已删除')
 
     def __str__(self):
         return "{}".format(self.host_name)

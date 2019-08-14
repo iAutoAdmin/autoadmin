@@ -163,10 +163,10 @@ if __name__ == '__main__':
     # ali.get_regions()
     # print(ali.get_slb())
     # print(ali.get_slb_detail("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
-    # print(ali.get_ecs())
+    print(ali.get_ecs())
     # res = ali.get_zone("cn-beijing")
     # ali.get_instancetype()
     # res = ali.get_instancetype("cn-beijing")
     # for i in res:
     #     print(i["CpuCoreCount"],i["MemorySize"])
-    print(ali.get_instance_disk_info("cn-beijing", "cn-beijing-g", "i-2ze4wxcyl324952q8m7b"))
+    # print(ali.get_instance_disk_info("cn-beijing", "cn-beijing-g", "i-2ze4wxcyl324952q8m7b"))
