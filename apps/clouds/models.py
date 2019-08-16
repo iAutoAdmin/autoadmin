@@ -20,8 +20,8 @@ class Instances(models.Model):
     cloud_id = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, verbose_name="云厂商", help_text="云厂商")
     resource_id = models.CharField("资源id", max_length=255, default=None, unique=True, help_text="资源id")
     region_id = models.CharField("地域名称", max_length=255, default=None, help_text="地域名称")
-    instance_id = models.CharField("实例ID", max_length=255,  default=None, help_text="实例ID")
-    instance_name = models.CharField("实例名称", max_length=255,  default=None, help_text="实例名称")
+    instance_id = models.CharField("实例ID", max_length=255, default=None, help_text="实例ID")
+    instance_name = models.CharField("实例名称", max_length=255, default=None, help_text="实例名称")
     os_name = models.CharField("操作系统", max_length=64, default=None, help_text="操作系统")
     zone_id = models.CharField("可用区", max_length=255, default=None, help_text="可用区")
     public_ip = models.CharField("公网ip", max_length=64, db_index=True, null=True, help_text="公网ip")
@@ -35,9 +35,9 @@ class Instances(models.Model):
     band_width_out = models.CharField("网络出口带宽", max_length=64, null=True, blank=True, help_text="网络出口带宽")
     instance_charge_type = models.CharField("付费类型", max_length=64, default="包年包月", help_text="付费类型")
     host_name = models.CharField("主机名称", max_length=64, default=None, help_text="主机名称")
-    gpu = models.CharField("GPU个数", max_length=64,  default=None, help_text="GPU个数")
-    ioOptimized = models.CharField("IO优化", max_length=64,  default=None, help_text="IO优化")
-    create_time = models.CharField("创建时间", max_length=64,  help_text="创建时间")
+    gpu = models.CharField("GPU个数", max_length=64, default=None, help_text="GPU个数")
+    ioOptimized = models.CharField("IO优化", max_length=64, default=None, help_text="IO优化")
+    create_time = models.CharField("创建时间", max_length=64, help_text="创建时间")
     expire_time = models.CharField("过期时间", max_length=64, help_text="过期时间")
     status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已删除')
 
@@ -47,3 +47,43 @@ class Instances(models.Model):
     class Meta:
         db_table = "clouds_instance"
         ordering = ["id"]
+
+
+class SLBServer(models.Model):
+    PLATFORM_TYPE = (
+        (1, u'腾讯'),
+        (2, u'阿里'),
+        (3, u'亚马逊')
+    )
+    SLB_STATUS = (
+        (0, u'停用'),
+        (1, u'使用'),
+    )
+    STORE_STATUS = (
+        (0, u'删除'),
+        (1, u'保存'),
+    )
+    slb_name = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'SLB名称')
+    slp_id = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'slpid')
+    platform = models.SmallIntegerField(default=1, choices=PLATFORM_TYPE, verbose_name=u'平台')
+    ext_ip = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'公网ip')
+    inner_ip = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'内网ip')
+    stype = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'服务类型')
+    back_server = models.ForeignKey(Instances, unique=False, verbose_name=u'业务线后端服务')
+    nginx_server = models.ForeignKey(Instances, unique=False, verbose_name=u'nginx后端服务')
+    f_protocol_port = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'前端协议端口')
+    b_protocol_port = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'后端协议端口')
+    status = models.SmallIntegerField(default=1, choices=SLB_STATUS, verbose_name=u'状态')
+    remark = models.TextField(max_length=500, blank=True, null=True, verbose_name=u'备注信息')
+    is_store = models.SmallIntegerField(default=1, choices=STORE_STATUS, verbose_name=u'存储')
+    add_time = models.DateTimeField(auto_now_add=True, verbose_name=u'添加时间')
+    update_time = models.DateTimeField(auto_now=True, verbose_name=u'更新时间')
+
+    def __unicode__(self):
+        return u"%s" % self.slb_name
+
+    class Meta:
+        managed = False
+        db_table = 'clouds_slb'
+        verbose_name = u'slb服务'
+        verbose_name_plural = u'slb服务表'
