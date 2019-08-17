@@ -6,7 +6,6 @@ class ManufacturerSerializer(serializers.ModelSerializer):
     """
     厂商列化类
     """
-
     class Meta:
         model = Manufacturer
         fields = '__all__'
@@ -27,6 +26,15 @@ class InstanceSerializer(serializers.ModelSerializer):
         ret['cloud_id'] = instance.cloud_id.vendor_name
         return ret
 
+    class Meta:
+        model = Instances
+        fields = '__all__'
+
+
+class SlbSerializer(serializers.ModelSerializer):
+    """
+    主机序列化类
+    """
     class Meta:
         model = Instances
         fields = '__all__'

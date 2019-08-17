@@ -15,6 +15,10 @@ class Manufacturer(models.Model):
 
 
 class Instances(models.Model):
+    STORE_STATUS = (
+        (0, u'删除'),
+        (1, u'保存'),
+    )
     created_at = models.DateTimeField("创建时间", auto_now_add=True, help_text="创建时间")
     updated_at = models.DateTimeField("更新时间", auto_now=True, help_text="更新时间")
     cloud_id = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, verbose_name="云厂商", help_text="云厂商")
@@ -39,7 +43,7 @@ class Instances(models.Model):
     ioOptimized = models.CharField("IO优化", max_length=64, default=None, help_text="IO优化")
     create_time = models.CharField("创建时间", max_length=64, help_text="创建时间")
     expire_time = models.CharField("过期时间", max_length=64, help_text="过期时间")
-    status = models.IntegerField(default=1, null=False, verbose_name=u'状态,1:存在,2:已删除')
+    is_store = models.IntegerField(default=1, choices=STORE_STATUS, verbose_name=u'状态,1:保存,0:删除')
 
     def __str__(self):
         return "{}".format(self.host_name)
@@ -49,41 +53,43 @@ class Instances(models.Model):
         ordering = ["id"]
 
 
-class SLBServer(models.Model):
-    PLATFORM_TYPE = (
-        (1, u'腾讯'),
-        (2, u'阿里'),
-        (3, u'亚马逊')
-    )
-    SLB_STATUS = (
-        (0, u'停用'),
-        (1, u'使用'),
-    )
+class BackendServer(models.Model):
+    vsgroupname = models.CharField(max_length=100, verbose_name=u'虚拟服务器组名称', help_text=u"虚拟服务器组名称")
+    instance = models.ForeignKey(Instances, on_delete=models.CASCADE, max_length=64, verbose_name=u'关联主机')
+    remark = models.TextField(max_length=500, blank=True, null=True, verbose_name=u'备注信息')
+
+    def __str__(self):
+        return u"%s" % self.vsgroupname
+
+    class Meta:
+        db_table = 'clouds_slb_backendserver'
+        ordering = ["id"]
+
+
+class SLB(models.Model):
     STORE_STATUS = (
         (0, u'删除'),
         (1, u'保存'),
     )
     slb_name = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'SLB名称')
-    slp_id = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'slpid')
-    platform = models.SmallIntegerField(default=1, choices=PLATFORM_TYPE, verbose_name=u'平台')
+    slb_id = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'负载均衡id')
+    cloud_id = models.ForeignKey(Manufacturer, on_delete=models.CASCADE, verbose_name="云厂商", help_text="云厂商")
     ext_ip = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'公网ip')
+    network = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'网络类型', help_text=u'网络类型')
     inner_ip = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'内网ip')
-    stype = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'服务类型')
-    back_server = models.ForeignKey(Instances, unique=False, verbose_name=u'业务线后端服务')
-    nginx_server = models.ForeignKey(Instances, unique=False, verbose_name=u'nginx后端服务')
+    backend_server = models.ForeignKey(BackendServer, on_delete=models.CASCADE, verbose_name=u'虚拟主机名称')
+    protocol = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'协议类型', help_text=u'协议类型')
     f_protocol_port = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'前端协议端口')
     b_protocol_port = models.CharField(max_length=100, blank=True, null=True, verbose_name=u'后端协议端口')
-    status = models.SmallIntegerField(default=1, choices=SLB_STATUS, verbose_name=u'状态')
-    remark = models.TextField(max_length=500, blank=True, null=True, verbose_name=u'备注信息')
+    status = models.CharField(max_length=64, verbose_name=u'SLB状态', help_text="SLB状态")
     is_store = models.SmallIntegerField(default=1, choices=STORE_STATUS, verbose_name=u'存储')
     add_time = models.DateTimeField(auto_now_add=True, verbose_name=u'添加时间')
     update_time = models.DateTimeField(auto_now=True, verbose_name=u'更新时间')
+    remark = models.TextField(max_length=500, blank=True, null=True, verbose_name=u'备注信息')
 
-    def __unicode__(self):
+    def __str__(self):
         return u"%s" % self.slb_name
 
     class Meta:
-        managed = False
         db_table = 'clouds_slb'
-        verbose_name = u'slb服务'
-        verbose_name_plural = u'slb服务表'
+        ordering = ["id"]

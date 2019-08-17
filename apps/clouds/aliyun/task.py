@@ -12,17 +12,13 @@ django.setup()
 
 import hashlib
 from clouds.aliyun.common import ALiYun
-from clouds.models import Instances, Manufacturer
+from clouds.models import Instances, Manufacturer, SLB
 
 
 def md5(str):
     m = hashlib.md5()
     m.update(str.encode("utf8"))
     return m.hexdigest()
-
-
-def commpare(new_list, old_list):
-    add_hosts_list = list(set(new_list).difference(set(old_list)))
 
 
 def sync_instances(manufacturer):
@@ -60,9 +56,9 @@ def sync_instances(manufacturer):
                         host_obj.instance_name = instance.get('InstanceName')
                         host_obj.os_name = instance.get('OSName')
                         host_obj.zone_id = instance.get("ZoneId")
-                        host_obj.private_ip = instance.get('VpcAttributes').get('PrivateIpAddress').get('IpAddress', "")[
+                        host_obj.private_ip = instance.get('VpcAttributes').get('PrivateIpAddress').get('IpAddress')[
                             0]
-                        host_obj.public_ip = instance.get('PublicIpAddress').get('IpAddress', "")[0]
+                        host_obj.public_ip = instance.get('PublicIpAddress').get('IpAddress')[0]
                         host_obj.e_ip = instance.get("EipAddress", "")
                         host_obj.instance_status = instance.get('Status')
                         host_obj.vpc_id = instance.get('InstanceNetworkType')
@@ -89,8 +85,8 @@ def sync_instances(manufacturer):
                                                  private_ip=
                                                  instance.get('VpcAttributes').get('PrivateIpAddress').get(
                                                      'IpAddress', "")[0],
-                                                 public_ip=instance.get('PublicIpAddress').get('IpAddress', "")[0],
-                                                 e_ip=instance.get('PublicIpAddress').get("EipAddress_IpAddress", "")[0],
+                                                 public_ip=instance.get('PublicIpAddress').get('IpAddress')[0],
+                                                 e_ip=instance.get("EipAddress", ""),
                                                  instance_status=instance.get('Status'),
                                                  vpc_id=instance.get('InstanceNetworkType'),
                                                  cpu_num=instance.get('Cpu'),
@@ -114,5 +110,48 @@ def sync_instances(manufacturer):
             ins_obj.save()
 
 
+
+def sync_slb(manufacturer):
+    """
+    在同步主机之前还需对比阿里云侧和本地机器,根据返回负载均衡名称来新增或删减，来修改status的状态，用来标记已删除或存在
+    :param manufacturer: ALY, TXY, AWS
+    :return:
+    """
+    new_list = []
+    old_list = []
+    # 获取本地数据库所有slb_id
+    queryset = SLB.objects.values("slb_id")
+    for slb_obj in list(queryset):
+        old_list.append(slb_obj['slb_id'])
+
+    ali = ALiYun()
+    loadbalancers = ali.get_slb()
+    for lb_obj in loadbalancers:
+        # 获取阿里云所有resource_id
+        new_list.append(lb_obj.get('LoadBalancerId'))
+
+    # 阿里云主机多余本地主机
+    add_hosts_list = list(set(new_list).difference(set(old_list)))
+
+    backendserver = ""
+    if add_hosts_list:
+        for instance in loadbalancers:
+            for manfu_obj in Manufacturer.objects.all():
+                if manfu_obj.vendor_name == manufacturer:
+                    try:
+                        slb_id = instance.get("LoadBalancerId")
+                        slb_obj = SLB.objects.get(slb_id=slb_id)
+                        slb_obj.slb_name = instance.get('LoadBalancerName')
+                        slb_obj.ext_ip = instance.get('Address', "")
+                        slb_obj.inner_ip = instance.get('Address', "")
+                        slb_obj.network = instance.get('NetworkType')
+                        slb_obj.cloud_id = manfu_obj.id
+                        slb_obj.status = instance.get('LoadBalancerStatus', "")
+                        slb_obj.back_server = backendserver
+                        slb_obj.save()
+                    except Instances.DoesNotExist:
+                        pass
+
 if __name__ == '__main__':
-    sync_instances("ALY")
+    # sync_instances("ALY")
+    sync_slb("ALY")
