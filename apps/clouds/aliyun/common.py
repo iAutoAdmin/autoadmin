@@ -2,11 +2,10 @@
 # coding=utf-8
 import json
 import re
+import base64
 from aliyunsdkcore import client
 from autoadmin.settings import ACCCESSKEYID, ACCESSSECRET
 from aliyunsdkcore.client import AcsClient
-from aliyunsdkcore.acs_exception.exceptions import ClientException
-from aliyunsdkcore.acs_exception.exceptions import ServerException
 from aliyunsdkecs.request.v20140526.DescribeZonesRequest import DescribeZonesRequest
 from aliyunsdkslb.request.v20140515.DescribeRegionsRequest import DescribeRegionsRequest
 from aliyunsdkecs.request.v20140526.DescribeAvailableResourceRequest import DescribeAvailableResourceRequest
@@ -104,8 +103,12 @@ class ALiYun(object):
             'ecs.c5.6xlarge': '24*48',
             'ecs.c5.8xlarge': '32*64'
         }
-        t5 = {'ecs.t5-lc2m1.nano': '1*0.5', 'ecs.t5-lc1m2.small': '1*2', 'ecs.t5-c1m2.large': '2*4',
-              'ecs.t5-lc1m4.large': '2*8'}
+        t5 = {
+            'ecs.t5-lc2m1.nano': '1*0.5',
+            'ecs.t5-lc1m2.small': '1*2',
+            'ecs.t5-c1m2.large': '2*4',
+            'ecs.t5-lc1m4.large': '2*8'
+        }
         for k in list(c5.keys()):
             if k not in instance:
                 del c5[k]
@@ -196,7 +199,8 @@ class ALiYun(object):
 
     def CreateInstance(self, region_id, ZoneId, ImageId, InstanceType, InstanceName, InstanceChargeType,
                        InternetChargeType,
-                       InternetMaxBandwidthOut, HostName, Password, VSwitchId, SecurityGroupId, Size):
+                       InternetMaxBandwidthOut, HostName, DataDisk, Password, VSwitchId, SecurityGroupId,
+                       UserData):
         """
         创建 实例
         :param region_id:   地域
@@ -208,10 +212,11 @@ class ALiYun(object):
         :param InternetChargeType:  网络计费方式
         :param InternetMaxBandwidthOut:  出网带宽
         :param HostName:  主机名字
+        :param DataDisk:  数据盘
         :param Password:  密码
         :param VSwitchId: 交换机
         :param SecurityGroupId:  安全组
-        :param Size:   数据盘  默认为None  20
+        :param UserData: 机器初始化cloud_init加载脚本
         :return: {'InstanceId': 'i-2ze210z0uiwyadm1m7x6'}
         """
         createclt = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id)
@@ -232,8 +237,21 @@ class ALiYun(object):
         createreq.set_Password(Password)
         createreq.set_VSwitchId(VSwitchId)
         createreq.set_SecurityGroupId(SecurityGroupId)
-        if Size != 0:
-            createreq.set_DataDisks([{'Size': Size, 'Category': 'cloud_efficiency'}])
+
+        '''通用配置 以下配固定不变配置'''
+        createreq.set_KeyPairName('twl-vpc-ecs-key')  # 初始化key
+        createreq.set_SecurityEnhancementStrategy('Active')  # 安全加固
+        createreq.set_IoOptimized('optimized')  # IO优化
+
+        createreq.set_DataDisks(DataDisk)  # 数据盘
+
+        ''' 通用配置  系统盘 '''
+        createreq.set_SystemDiskCategory('cloud_efficiency')  # 高效云盘
+        createreq.set_SystemDiskSize(40)  # 系统盘大小40G
+        createreq.set_SystemDiskDiskName(HostName + "-sysdisk")  # 系统盘命名
+
+        ''' 初始化要执行的脚本'''
+        createreq.set_UserData(UserData)  # 传入UserData数据,进行开机初始化
         createre = json.loads(createclt.do_action_with_exception(createreq), encoding='utf-8')
         return createre
 
@@ -284,10 +302,10 @@ class ALiYun(object):
         :return:
         """
         instances = []
-        regionids = self.DescribeRegions()
+        region_ids = self.DescribeRegions()
         try:
-            for rid in regionids:
-                client = AcsClient(self.AccessKeyId, self.AccessKeySecret, rid, connect_timeout=30)
+            for region_id in region_ids:
+                client = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id, connect_timeout=30)
                 request = DescribeInstancesRequest()
                 request.set_accept_format('json')
                 response = client.do_action_with_exception(request)
@@ -297,13 +315,13 @@ class ALiYun(object):
         except Exception as ex:
             return ex
 
-    def get_instancetype(self, RegionId):
+    def get_instancetype(self, region_id):
         """
         查看ECS实例规格信息
         :param RegionId:
         :return:
         """
-        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, RegionId)
+        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id)
         request = DescribeInstanceTypesRequest()
         request.set_accept_format('json')
         request.set_InstanceTypeFamily("ecs.t5")
@@ -311,7 +329,7 @@ class ALiYun(object):
         res = str(response, encoding='utf-8')
         return json.loads(res).get("InstanceTypes").get("InstanceType")
 
-    def get_instance_disk_info(self, regionid, zoneid, instanceid):
+    def get_instance_disk_info(self, region_id, zone_id, instance_id):
         """
         获取实例下磁盘信息
         :param regionid: cn-beijing
@@ -319,11 +337,11 @@ class ALiYun(object):
         :param instanceid: i-2ze4wxcyl324952q8m7b
         :return:
         """
-        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, regionid)
+        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id)
         request = DescribeDisksRequest()
         request.set_accept_format('json')
-        request.set_ZoneId(zoneid)
-        request.set_InstanceId(instanceid)
+        request.set_ZoneId(zone_id)
+        request.set_InstanceId(instance_id)
         response = client.do_action_with_exception(request)
         # print((str(response, encoding='utf-8')))
         res = json.loads((str(response, encoding='utf-8')))
@@ -349,17 +367,17 @@ class ALiYun(object):
         except Exception as ex:
             print(ex)
 
-    def get_slb_detail(self, loadbalancerid, regionid):
+    def get_slb_detail(self, loadbalancer_id, region_id):
         """
         返回lb详细信息
         :param loadbalancerid: lb-2zeqx4f9qglel963dmdzv
         :param regionid: cn-beijing
         :return:
         """
-        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, regionid)
+        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id)
         request = DescribeLoadBalancerAttributeRequest()
         request.set_accept_format('json')
-        request.set_LoadBalancerId(loadbalancerid)
+        request.set_LoadBalancerId(loadbalancer_id)
         response = client.do_action_with_exception(request)
         return eval(str(response, encoding='utf-8'))
 
@@ -373,15 +391,26 @@ if __name__ == '__main__':
     print(ali.DescribeVpcs('cn-beijing'))
     print(ali.DescribeVSwitches('cn-beijing', 'cn-beijing-h', 'vpc-2ze28051lkxec9opj6smj'))
     print(ali.DescribeSecurityGroups('cn-beijing', 'vpc-2ze28051lkxec9opj6smj'))
-    createecs = ali.CreateInstance(region_id='cn-beijing', ZoneId='cn-beijing-h',
+    hostname = "test-01"
+    datadisk = [{"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test"},
+                {"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test1"}]
+    cmd = '''#!/bin/sh\n cd  /root;wget http://software.autoadmin.com/init/init.sh  && sh init_vpc.sh > init.log 2>&1'''
+    userdata = base64.b64encode(cmd)
+    createecs = ali.CreateInstance(region_id='cn-beijing',
+                                   ZoneId='cn-beijing-h',
                                    ImageId='centos_7_04_64_20G_alibase_201701015.vhd',
-                                   InstanceType='ecs.t5-lc2m1.nano', InstanceName='test.test.com',
+                                   InstanceType='ecs.t5-lc2m1.nano',
+                                   InstanceName=hostname,
                                    InstanceChargeType='PostPaid',
-                                   InternetChargeType='PayByBandwidth', InternetMaxBandwidthOut='1',
-                                   HostName='test.test.com',
-                                   Password='1qaz.2wsx', VSwitchId='vsw-2ze1c3ty3fj74rr16n1c4',
+                                   InternetChargeType='PayByBandwidth',
+                                   InternetMaxBandwidthOut='1',
+                                   HostName=hostname,
+                                   DataDisk=datadisk,
+                                   Password='1qaz.2wsx',
+                                   VSwitchId='vsw-2ze1c3ty3fj74rr16n1c4',
                                    SecurityGroupId='sg-2zeg2nvydu16ikvppjm7',
-                                   Size=0)
+                                   UserData=userdata)
+
     # print(ali.get_slb())
     # print(ali.get_slb_detail("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
     # print(ali.get_slb_backends("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
