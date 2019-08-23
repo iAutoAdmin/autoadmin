@@ -110,7 +110,6 @@ def sync_instances(manufacturer):
             ins_obj.save()
 
 
-
 def sync_slb(manufacturer):
     """
     在同步主机之前还需对比阿里云侧和本地机器,根据返回负载均衡名称来新增或删减，来修改status的状态，用来标记已删除或存在
@@ -133,7 +132,6 @@ def sync_slb(manufacturer):
     # 阿里云主机多余本地主机
     add_hosts_list = list(set(new_list).difference(set(old_list)))
 
-    backendserver = ""
     if add_hosts_list:
         for instance in loadbalancers:
             for manfu_obj in Manufacturer.objects.all():
@@ -141,16 +139,25 @@ def sync_slb(manufacturer):
                     try:
                         slb_id = instance.get("LoadBalancerId")
                         slb_obj = SLB.objects.get(slb_id=slb_id)
+                        slb_obj.slb_id = slb_id
                         slb_obj.slb_name = instance.get('LoadBalancerName')
                         slb_obj.ext_ip = instance.get('Address', "")
                         slb_obj.inner_ip = instance.get('Address', "")
                         slb_obj.network = instance.get('NetworkType')
-                        slb_obj.cloud_id = manfu_obj.id
+                        slb_obj.cloud_id_id = manfu_obj.id
                         slb_obj.status = instance.get('LoadBalancerStatus', "")
-                        slb_obj.back_server = backendserver
+                        slb_obj.backend_server_id = 1
                         slb_obj.save()
-                    except Instances.DoesNotExist:
-                        pass
+                    except SLB.DoesNotExist:
+                        SLB.objects.create(slb_id=instance.get("LoadBalancerId"),
+                                           slb_name=instance.get('LoadBalancerName'),
+                                           ext_ip=instance.get('Address', ""),
+                                           inner_ip=instance.get('Address', ""),
+                                           network=instance.get('NetworkType'),
+                                           cloud_id_id=manfu_obj.id,
+                                           status=instance.get('LoadBalancerStatus', ""),
+                                           backend_server_id=1)
+
 
 if __name__ == '__main__':
     # sync_instances("ALY")

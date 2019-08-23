@@ -22,7 +22,7 @@ from aliyunsdkecs.request.v20140526.DescribeVpcsRequest import DescribeVpcsReque
 from aliyunsdkecs.request.v20140526.DescribeVSwitchesRequest import DescribeVSwitchesRequest
 from aliyunsdkecs.request.v20140526.CreateInstanceRequest import CreateInstanceRequest
 from aliyunsdkecs.request.v20140526.AllocatePublicIpAddressRequest import AllocatePublicIpAddressRequest
-from aliyunsdkecs.request.v20140526 import DescribeInstancesRequest, DescribeImagesRequest, \
+from aliyunsdkecs.request.v20140526 import DescribeImagesRequest, \
     DescribeSecurityGroupsRequest, DescribeVpcsRequest, \
     DescribeVSwitchesRequest, CreateInstanceRequest, StartInstanceRequest, StopInstanceRequest
 
@@ -80,6 +80,7 @@ class ALiYun(object):
         resourcereq.set_DestinationResource(DestinationResource)
         resourcereq.set_accept_format('json')
         resourcere = json.loads(resourceclt.do_action_with_exception(resourcereq), encoding='utf-8')
+        print(resourcere)
         return resourcere
 
     def AvailableInstanceType(self, InstanceChargeType, region_id, ZoneId):
@@ -92,16 +93,18 @@ class ALiYun(object):
         instance = []
         for i in instanceres['AvailableZones']['AvailableZone'][0]['AvailableResources']['AvailableResource'][0][
             'SupportedResources']['SupportedResource']:
-            if re.match('ecs.t5', i['Value']) or re.match('ecs.c5', i['Value']):
+            print(i)
+            if re.match('ecs.t5', i['Value']) or re.search('ecs.c5', i['Value']) or re.search('ecs.g5', i['Value']):
                 instance.append(i['Value'])
         c5 = {
             'ecs.c5.large': '2*4',
             'ecs.c5.xlarge': '4*8',
             'ecs.c5.2xlarge': '8*16',
-            'ecs.g5.3xlarge': '12*24',
-            'ecs.g5.4xlarge': '16*32',
+            'ecs.c5.3xlarge': '12*24',
+            'ecs.c5.4xlarge': '16*32',
             'ecs.c5.6xlarge': '24*48',
-            'ecs.c5.8xlarge': '32*64'
+            'ecs.c5.8xlarge': '32*64',
+            'ecs.g5.2xlarge': '8*32'
         }
         t5 = {
             'ecs.t5-lc2m1.nano': '1*0.5',
@@ -109,6 +112,7 @@ class ALiYun(object):
             'ecs.t5-c1m2.large': '2*4',
             'ecs.t5-lc1m4.large': '2*8'
         }
+        print(instance)
         for k in list(c5.keys()):
             if k not in instance:
                 del c5[k]
@@ -303,17 +307,15 @@ class ALiYun(object):
         """
         instances = []
         region_ids = self.DescribeRegions()
-        try:
-            for region_id in region_ids:
-                client = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id, connect_timeout=30)
-                request = DescribeInstancesRequest()
-                request.set_accept_format('json')
-                response = client.do_action_with_exception(request)
-                res = json.loads(str(response, encoding='utf-8'))
-                instances += res['Instances']['Instance']
-            return instances
-        except Exception as ex:
-            return ex
+        for region_id in region_ids.keys():
+            client = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id, connect_timeout=30)
+            request = DescribeInstancesRequest()
+            request.set_accept_format('json')
+            response = client.do_action_with_exception(request)
+            res = json.loads(str(response, encoding='utf-8'))
+            instances += res['Instances']['Instance']
+        return instances
+
 
     def get_instancetype(self, region_id):
         """
@@ -360,8 +362,8 @@ class ALiYun(object):
                 request = DescribeLoadBalancersRequest()
                 request.set_accept_format('json')
                 response = client.do_action_with_exception(request)
-                res = eval(str(response, encoding='utf-8'))
-                # print(res)
+                # print(response)
+                res = json.loads(str(response, encoding='utf-8'))
                 balancers += res.get("LoadBalancers").get("LoadBalancer")
             return balancers
         except Exception as ex:
@@ -384,37 +386,37 @@ class ALiYun(object):
 
 if __name__ == '__main__':
     ali = ALiYun()
-    print(ali.DescribeRegions())
-    print(ali.AvailableZones('cn-beijing'))
-    print(ali.AvailableInstanceType('PostPaid', 'cn-beijing', 'cn-beijing-h'))
-    print(ali.DescribeImages("cn-beijing"))
-    print(ali.DescribeVpcs('cn-beijing'))
-    print(ali.DescribeVSwitches('cn-beijing', 'cn-beijing-h', 'vpc-2ze28051lkxec9opj6smj'))
-    print(ali.DescribeSecurityGroups('cn-beijing', 'vpc-2ze28051lkxec9opj6smj'))
-    hostname = "test-01"
-    datadisk = [{"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test"},
-                {"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test1"}]
-    cmd = '''#!/bin/sh\n cd  /root;wget http://software.autoadmin.com/init/init.sh  && sh init_vpc.sh > init.log 2>&1'''
-    userdata = base64.b64encode(cmd)
-    createecs = ali.CreateInstance(region_id='cn-beijing',
-                                   ZoneId='cn-beijing-h',
-                                   ImageId='centos_7_04_64_20G_alibase_201701015.vhd',
-                                   InstanceType='ecs.t5-lc2m1.nano',
-                                   InstanceName=hostname,
-                                   InstanceChargeType='PostPaid',
-                                   InternetChargeType='PayByBandwidth',
-                                   InternetMaxBandwidthOut='1',
-                                   HostName=hostname,
-                                   DataDisk=datadisk,
-                                   Password='1qaz.2wsx',
-                                   VSwitchId='vsw-2ze1c3ty3fj74rr16n1c4',
-                                   SecurityGroupId='sg-2zeg2nvydu16ikvppjm7',
-                                   UserData=userdata)
+    # print(ali.DescribeRegions())
+    # print(ali.AvailableZones('cn-beijing'))
+    # print(ali.AvailableInstanceType('PostPaid', 'cn-beijing', 'cn-beijing-g'))
+    # print(ali.DescribeImages("cn-beijing"))
+    # print(ali.DescribeVpcs('cn-beijing'))
+    # print(ali.DescribeVSwitches('cn-beijing', 'cn-beijing-h', 'vpc-2ze28051lkxec9opj6smj'))
+    # print(ali.DescribeSecurityGroups('cn-beijing', 'vpc-2ze28051lkxec9opj6smj'))
+    # hostname = "test-01"
+    # datadisk = [{"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test"},
+    #             {"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test1"}]
+    # cmd = '''#!/bin/sh\n cd  /root;wget http://software.autoadmin.com/init/init.sh  && sh init_vpc.sh > init.log 2>&1'''
+    # userdata = base64.b64encode(cmd.encode('utf-8')).decode('utf-8')
+    # print(userdata)
+    # createecs = ali.CreateInstance(region_id='cn-beijing',
+    #                                ZoneId='cn-beijing-h',
+    #                                ImageId='centos_7_04_64_20G_alibase_201701015.vhd',
+    #                                InstanceType='ecs.t5-lc2m1.nano',
+    #                                InstanceName=hostname,
+    #                                InstanceChargeType='PostPaid',
+    #                                InternetChargeType='PayByBandwidth',
+    #                                InternetMaxBandwidthOut='1',
+    #                                HostName=hostname,
+    #                                DataDisk=datadisk,
+    #                                Password='1qaz.2wsx',
+    #                                VSwitchId='vsw-2ze1c3ty3fj74rr16n1c4',
+    #                                SecurityGroupId='sg-2zeg2nvydu16ikvppjm7',
+    #                                UserData=userdata)
 
-    # print(ali.get_slb())
-    # print(ali.get_slb_detail("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
-    # print(ali.get_slb_backends("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
     # print(ali.get_ecs())
+    print(ali.get_slb())
+    # print(ali.get_slb_detail("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
     # res = ali.get_instancetype("cn-beijing")
     # for i in res:
     #     print(i["CpuCoreCount"],i["MemorySize"])
