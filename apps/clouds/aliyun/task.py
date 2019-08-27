@@ -11,7 +11,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "autoadmin.settings")
 django.setup()
 
 import hashlib
-from clouds.aliyun.common import ALiYun
+from clouds.aliyun.ecs import ALiYun
 from clouds.models import Instances, Manufacturer, SLB
 
 

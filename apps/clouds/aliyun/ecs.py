@@ -3,9 +3,9 @@
 import json
 import re
 import base64
+from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore import client
 from autoadmin.settings import ACCCESSKEYID, ACCESSSECRET
-from aliyunsdkcore.client import AcsClient
 from aliyunsdkecs.request.v20140526.DescribeZonesRequest import DescribeZonesRequest
 from aliyunsdkslb.request.v20140515.DescribeRegionsRequest import DescribeRegionsRequest
 from aliyunsdkecs.request.v20140526.DescribeAvailableResourceRequest import DescribeAvailableResourceRequest
@@ -17,14 +17,12 @@ from aliyunsdkecs.request.v20140526.StopInstanceRequest import StopInstanceReque
 from aliyunsdkecs.request.v20140526.StartInstanceRequest import StartInstanceRequest
 from aliyunsdkecs.request.v20140526.DescribeDisksRequest import DescribeDisksRequest
 from aliyunsdkecs.request.v20140526.DescribeSecurityGroupsRequest import DescribeSecurityGroupsRequest
-from aliyunsdkecs.request.v20140526.DescribeImagesRequest import DescribeImagesRequest
 from aliyunsdkecs.request.v20140526.DescribeVpcsRequest import DescribeVpcsRequest
 from aliyunsdkecs.request.v20140526.DescribeVSwitchesRequest import DescribeVSwitchesRequest
 from aliyunsdkecs.request.v20140526.CreateInstanceRequest import CreateInstanceRequest
 from aliyunsdkecs.request.v20140526.AllocatePublicIpAddressRequest import AllocatePublicIpAddressRequest
-from aliyunsdkecs.request.v20140526 import DescribeImagesRequest, \
-    DescribeSecurityGroupsRequest, DescribeVpcsRequest, \
-    DescribeVSwitchesRequest, CreateInstanceRequest, StartInstanceRequest, StopInstanceRequest
+from aliyunsdkecs.request.v20140526 import DescribeImagesRequest, DescribeSecurityGroupsRequest, DescribeVpcsRequest
+from aliyunsdkslb.request.v20140515.DescribeVServerGroupsRequest import DescribeVServerGroupsRequest
 
 
 class ALiYun(object):
@@ -170,7 +168,7 @@ class ALiYun(object):
         :return: {'vsw-hp3ffb8524tt1gqp22utj': '华北5测试B交换机'}
         """
         vswitchesclt = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id)
-        vswitchesreq = DescribeVSwitchesRequest.DescribeVSwitchesRequest()
+        vswitchesreq = DescribeVSwitchesRequest()
         vswitchesreq.set_action_name('DescribeVSwitches')
         vswitchesreq.set_VpcId(vpc_id)
         vswitchesreq.set_accept_format('json')
@@ -224,7 +222,7 @@ class ALiYun(object):
         :return: {'InstanceId': 'i-2ze210z0uiwyadm1m7x6'}
         """
         createclt = AcsClient(self.AccessKeyId, self.AccessKeySecret, region_id)
-        createreq = CreateInstanceRequest.CreateInstanceRequest()
+        createreq = CreateInstanceRequest()
         createreq.set_action_name('CreateInstance')
         createreq.set_accept_format('json')
         createreq.set_ZoneId(ZoneId)
@@ -383,6 +381,14 @@ class ALiYun(object):
         response = client.do_action_with_exception(request)
         return eval(str(response, encoding='utf-8'))
 
+    def DescribeVServerGroups(self):
+        client = AcsClient(self.AccessKeyId, self.AccessKeySecret, 'cn-beijing')
+        request = DescribeVServerGroupsRequest()
+        request.set_accept_format('json')
+        request.set_LoadBalancerId("lb-2zeqx4f9qglel963dmdzv")
+        response = client.do_action_with_exception(request)
+        # python2:  print(response)
+        print(str(response, encoding='utf-8'))
 
 if __name__ == '__main__':
     ali = ALiYun()
@@ -391,7 +397,7 @@ if __name__ == '__main__':
     # print(ali.AvailableInstanceType('PostPaid', 'cn-beijing', 'cn-beijing-g'))
     # print(ali.DescribeImages("cn-beijing"))
     # print(ali.DescribeVpcs('cn-beijing'))
-    # print(ali.DescribeVSwitches('cn-beijing', 'cn-beijing-h', 'vpc-2ze28051lkxec9opj6smj'))
+    print(ali.DescribeVSwitches('cn-beijing', 'cn-beijing-h', 'vpc-2ze28051lkxec9opj6smj'))
     # print(ali.DescribeSecurityGroups('cn-beijing', 'vpc-2ze28051lkxec9opj6smj'))
     # hostname = "test-01"
     # datadisk = [{"Size": 40, "Category": "cloud_ssd", "DiskName": "ssd-test"},
@@ -415,8 +421,9 @@ if __name__ == '__main__':
     #                                UserData=userdata)
 
     # print(ali.get_ecs())
-    print(ali.get_slb())
+    # print(ali.get_slb())
     # print(ali.get_slb_detail("lb-2zeqx4f9qglel963dmdzv", "cn-beijing"))
+    # ali.DescribeVServerGroups()
     # res = ali.get_instancetype("cn-beijing")
     # for i in res:
     #     print(i["CpuCoreCount"],i["MemorySize"])
