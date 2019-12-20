@@ -9,7 +9,7 @@ from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
 import logging
-import os
+import json
 
 logger = logging.getLogger('default')
 
@@ -107,7 +107,7 @@ class RejectKeyView(APIView):
 
 class DeleteKeyView(APIView):
     """
-    拒绝key
+    删除key
     """
 
     schema = AutoSchema(
@@ -124,7 +124,7 @@ class DeleteKeyView(APIView):
             contenxt = hostname + " doesn't exist"
             raise APIException(contenxt)
 
-    def post(self, request):
+    def delete(self, request):
         hostnames = request.data.get('hostname', None)
         for hostname in hostnames:
             minion_id = self.check_object(hostname)
@@ -144,26 +144,88 @@ class JobsHistoryView(APIView):
         return Response(jids)
 
 
-class JobsManagerView(APIView):
+class JobsActiveView(APIView):
     """
     get:
-    获取运行的jobs
-    post:
-    杀掉正在运行的job
+    获取正在运行的jobs
+    """
+
+    def get(self, request):
+        job_active_list = []
+        sapi = SaltAPI()
+        result = sapi.runner("jobs.active")
+        if request:
+            for jid, info in result.items():
+                # 不能直接把info放到append中
+                info.update({"Jid": jid})
+                job_active_list.append(info)
+        return Response({"data": job_active_list, "status": 1, "message": ""}, 200)
+
+
+class JobsKillView(APIView):
+    """
+    delete:
+    杀掉运行的job
+    :parameter action: kill
+    :parameter minion_ids: {"v-zpgeek-01": 12345,"v-zpgeek-02": 2345}
+    """
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='action', required=True, location='query', description='kill', type='string'),
+            coreapi.Field(name='jid', required=True, location='query', description='20191220141748273576', type='string'),
+            coreapi.Field(name='minion_ids', required=True, location='query', description='json字符串', type='string')
+        ]
+    )
+
+    def delete(self, request):
+        action = request.query_params.get('action', None)
+        jid = request.query_params.get('jid', None)
+        minion_ids = request.query_params.get('minion_ids', None)
+        print(json.loads(minion_ids))
+        if action and jid and minion_ids:
+            for minion in json.loads(minion_ids):
+                for minion_id, ppid in minion.items():
+                    # 获取pgid 并杀掉
+                    kill_ppid_pid = r'''ps -eo pid,pgid,ppid,comm |grep %s |grep salt-minion |
+                                         awk '{print "kill -- -"$2}'|sh''' % ppid
+                    try:
+                        # 通过kill -- -pgid 删除salt 相关的父进程及子进程
+                        sapi = SaltAPI()
+                        pid_result = sapi.shell_remote_execution(minion_id, kill_ppid_pid)
+                        logger.info("kill %s %s return: %s" % (minion, kill_ppid_pid, pid_result))
+                    except Exception as e:
+                        logger.info("kill %s %s error: %s" % (minion, jid, e))
+            return Response({"status": 1, "message": ""}, 200)
+        else:
+            return Response({"status": 0, "message": "The specified jid or action or minion_id "
+                                                "parameter does not exist"}, 400)
+
+
+class JobsDetailView(APIView):
+    """
+    get:
+    查看单个具体job
+    """
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='jid', required=True, location='query', description='12345678', type='string'),
+        ]
+    )
+
+    def get(self, request, *args, **kwargs):
+        jid = request.query_params.get('jid', None)
+        sapi = SaltAPI()
+        result = sapi.jobs_info(jid)
+        return Response(result)
+
+
+class JobsScheduleView(APIView):
+    """
+    get:
+    查看定时任务
     """
 
     def get(self, request):
         sapi = SaltAPI()
         jids_running = sapi.runner("jobs.active")
         return Response(jids_running)
-
-    def post(self, request):
-        schema = AutoSchema(
-            manual_fields=[
-                coreapi.Field(name='action', required=True, location='query', description='kill', type='string'),
-            ]
-        )
-        jid = request.query_params.get('kill', None)
-        kill = "salt '*' saltutil.kill_job" + " " + jid
-        os.popen(kill)
-        return Response({"status": 0})
