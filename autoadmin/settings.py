@@ -45,7 +45,10 @@ INSTALLED_APPS = [
     'users',
     'groups',
     'servicetree',
-    'pms'
+    'pms',
+    'salt',
+    'djcelery',
+    'clouds',
 ]
 
 MIDDLEWARE = [
@@ -85,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'autoadmin',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': 'lixiang123',
         'HOST': '127.0.0.1',
         'PORT': 3306,
         'OPTIONS': {
@@ -149,3 +152,70 @@ LOGOUT_URL = 'rest_framework:logout'
 
 ACCCESSKEYID = os.environ.get("ACCCESSKEYID", '')
 ACCESSSECRET = os.environ.get("ACCESSSECRET", '')
+
+# salt_api
+SALT_URL = 'http://192.168.1.58:8000'
+SALT_USER = 'test'
+SALT_PASSWORD = 'test1234'
+
+# redis
+REDIS_HOST = '127.0.0.1'
+REDIS_PORT = 6379
+REDIS_PASSWORD = ''
+
+# celery
+import djcelery
+from celery import platforms
+from celery.schedules import crontab
+from kombu import Queue
+from kombu import Exchange
+from datetime import timedelta
+
+platforms.C_FORCE_ROOT = True
+djcelery.setup_loader()
+BROKER_URL = 'redis://:{}@{}:{}/0'.format(REDIS_PASSWORD, REDIS_HOST, REDIS_PORT)  # redis broker
+CELERY_RESULT_BACKEND = 'redis://:{}@{}:{}/1'.format(REDIS_PASSWORD, REDIS_HOST, REDIS_PORT)  # redis backend
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_IMPORTS = (
+    'salt.tasks'
+)
+CELERYD_CONCURRENCY = 4
+CELERYD_PREFETCH_MULTIPLIER = 4
+CELERYD_MAX_TASKS_PER_CHILD = 40
+CELERY_TASK_RESULT_EXPIRES = 86400
+CELERYD_TASK_SOFT_TIME_LIMIT = 900
+CELERY_ENABLE_UTC = True
+
+CELERY_QUEUES = (
+    Queue('low', Exchange('low', type='direct')),
+    Queue('high', Exchange('high', type='direct')),
+)
+
+
+class MyRouter(object):
+    def route_for_task(self, task, args=None, kwargs=None):
+
+        if task.startswith('deploy'):
+            return {
+                'queue': 'high',
+            }
+        else:
+            return {'queue': 'low'}
+
+
+CELERY_ROUTES = (MyRouter(),)
+
+# 定时任务
+CELERYBEAT_SCHEDULE = {
+    'minion_status_task': {
+        'task': 'salt.tasks.minion_status',
+        # 'schedule': crontab(minute=u'40', hour=u'17',),
+        'schedule': timedelta(minutes=10),
+        'args': (),
+        'options': {
+            'queue': 'low',  # 指定要使用的队列
+        }
+    }
+}
