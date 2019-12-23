@@ -152,6 +152,16 @@ class SaltAPI(object):
         else:
             return {"status": False, "message": "Salt API Error : " + content}
 
+    def sync_grains(self, tgt):
+        # Grains.items
+        params = {'client': 'local', 'tgt': tgt, 'fun': 'saltutil.sync_grains', 'tgt_type': 'list'}
+        content = self.post_request(params)
+        if isinstance(content, dict):
+            ret = content['return'][0]
+            return {"status": True, "message": "", "data": ret}
+        else:
+            return {"status": False, "message": "Salt API Error : " + content}
+
     def target_remote_execution(self, tgt, fun, arg):
         # Use targeting for remote execution
         params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'expr_form': 'nodegroup'}

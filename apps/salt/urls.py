@@ -1,6 +1,6 @@
 from rest_framework.routers import DefaultRouter
 from .views import ListKeyView, AddKeyView, MinonStatusViewSet, RejectKeyView, DeleteKeyView, JobsHistoryView, \
-    JobsActiveView, JobsKillView, JobsScheduleView, JobsDetailView
+    JobsActiveView, JobsKillView, JobsScheduleView, JobsDetailView, GrainsView, PillarView
 from django.conf.urls import include, url
 
 salt_router = DefaultRouter()
@@ -20,4 +20,8 @@ urlpatterns = [
     url(r'^jobs/detail/$', JobsDetailView.as_view()),
     url(r'^jobs/kill/$', JobsKillView.as_view()),
     url(r'^jobs/schedule/$', JobsScheduleView.as_view()),
+
+    # 数据管理
+    url(r'^minion/grains/$', GrainsView.as_view()),
+    url(r'^minion/pillar/$', PillarView.as_view()),
 ]

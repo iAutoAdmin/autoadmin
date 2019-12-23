@@ -172,7 +172,8 @@ class JobsKillView(APIView):
     schema = AutoSchema(
         manual_fields=[
             coreapi.Field(name='action', required=True, location='query', description='kill', type='string'),
-            coreapi.Field(name='jid', required=True, location='query', description='20191220141748273576', type='string'),
+            coreapi.Field(name='jid', required=True, location='query', description='20191220141748273576',
+                          type='string'),
             coreapi.Field(name='minion_ids', required=True, location='query', description='json字符串', type='string')
         ]
     )
@@ -198,7 +199,7 @@ class JobsKillView(APIView):
             return Response({"status": 1, "message": ""}, 200)
         else:
             return Response({"status": 0, "message": "The specified jid or action or minion_id "
-                                                "parameter does not exist"}, 400)
+                                                     "parameter does not exist"}, 400)
 
 
 class JobsDetailView(APIView):
@@ -208,7 +209,8 @@ class JobsDetailView(APIView):
     """
     schema = AutoSchema(
         manual_fields=[
-            coreapi.Field(name='jid', required=True, location='query', description='12345678', type='string'),
+            coreapi.Field(name='jid', required=True, location='query', description='20191220141748273576',
+                          type='string'),
         ]
     )
 
@@ -227,5 +229,43 @@ class JobsScheduleView(APIView):
 
     def get(self, request):
         sapi = SaltAPI()
-        jids_running = sapi.runner("jobs.active")
-        return Response(jids_running)
+        result = sapi.runner("jobs.active")
+        return Response(result)
+
+
+class GrainsView(APIView):
+    """
+    post: 同步grains数据
+    :type list
+    """
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='minion_ids', required=True, location='form', description='v-test-01,v-test-02',
+                          type='array'),
+        ]
+    )
+
+    def post(self, request):
+        minion_ids = request.data.get('minion_ids', None)
+        sapi = SaltAPI()
+        result = sapi.sync_grains(minion_ids)
+        return Response(result)
+
+
+class PillarView(APIView):
+    """
+    post: 同步pillar数据
+    :type list
+    """
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='minion_ids', required=True, location='form', description='v-test-01,v-test-02',
+                          type='array'),
+        ]
+    )
+
+    def post(self, request):
+        minion_ids = request.data.get('minion_ids', None)
+        sapi = SaltAPI()
+        result = sapi.sync_grains(minion_ids)
+        return Response(result)

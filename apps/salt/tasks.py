@@ -5,6 +5,8 @@ import sys
 import importlib
 import django
 import logging
+from salt.api import SaltAPI
+from salt.models import Minions_status
 
 logger = logging.getLogger("error")
 pathname = os.path.dirname(os.path.abspath(__file__))
@@ -12,12 +14,15 @@ sys.path.insert(0, pathname)
 sys.path.insert(0, os.path.abspath(os.path.join(pathname, '..')))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "autoadmin.settings")
 importlib.reload(sys)
-
 django.setup()
-from salt.api import SaltAPI
-from salt.models import Minions_status
+
+from celery import Celery
+from autoadmin.settings import BROKER_URL, CELERY_RESULT_BACKEND
+
+app = Celery('task', broker=BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
 
+@app.task
 def minion_status():
     sapi = SaltAPI()
     minions_status = sapi.runner("manage.status")
