@@ -3,8 +3,8 @@ from rest_framework import viewsets, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from salt.api import SaltAPI
-from salt.serializers import MinionStausSerializer, AclSerializer
-from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls
+from salt.serializers import MinionStausSerializer, AclSerializer, ArgSerializer, SlsSerializer, MdlSerializer
+from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg
 from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
@@ -38,30 +38,44 @@ class AclViewSet(viewsets.ModelViewSet):
 
 class SlsViewSet(viewsets.ModelViewSet):
     """
-    list: 获取salt状态文件列表名称
+    list: 获取salt状态文件列表
     create: 添加salt状态文件
-    retrieve: 查看salt状态文件名称
-    update: 更新salt状态文件名称
-    partial_update: 部分更新salt状态文件名称
-    destroy: 删除salt状态文件名称
+    retrieve: 查看salt状态文件
+    update: 更新salt状态文件
+    partial_update: 部分更新salt状态文件
+    destroy: 删除salt状态文件
     """
-    serializer_class = AclSerializer
+    serializer_class = SlsSerializer
     permission_classes = []
     queryset = SaltSls.objects.all()
 
 
 class MdlViewSet(viewsets.ModelViewSet):
     """
-    list: 获取salt模块列表名称
+    list: 获取salt模块列表
     create: 添加salt模块
-    retrieve: 查看salt模块名称
-    update: 更新salt模块名称
-    partial_update: 部分更新salt模块名称
-    destroy: 删除salt模块件名称
+    retrieve: 查看salt模块
+    update: 更新salt模块
+    partial_update: 部分更新salt模块
+    destroy: 删除salt模块件
     """
-    serializer_class = AclSerializer
+    serializer_class = MdlSerializer
     permission_classes = []
     queryset = SaltMdl.objects.all()
+
+
+class ArgViewSet(viewsets.ModelViewSet):
+    """
+    list: 获取cmd.run模块参数列表
+    create: 添加cmd.run模块参数
+    retrieve: 查看cmd.run模块参数
+    update: 更新cmd.run模块参数
+    partial_update: 部分cmd.run模块参数
+    destroy: 删除cmd.run模块参数
+    """
+    serializer_class = ArgSerializer
+    permission_classes = []
+    queryset = SaltArg.objects.all()
 
 
 class ListKeyView(APIView):

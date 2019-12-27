@@ -8,6 +8,7 @@ salt_router.register(r'minion/status', MinonStatusViewSet, base_name="minion_sta
 salt_router.register(r'acl', AclViewSet, base_name="salt_acl")
 salt_router.register(r'sls', SlsViewSet, base_name="salt_sls")
 salt_router.register(r'mdl', MdlViewSet, base_name="salt_mdl")
+salt_router.register(r'arg', MdlViewSet, base_name="salt_arg")
 
 urlpatterns = [
     url(r'^', include(salt_router.urls)),
@@ -27,6 +28,4 @@ urlpatterns = [
     # 数据管理
     url(r'^minion/grains/$', GrainsView.as_view()),
     url(r'^minion/pillar/$', PillarView.as_view()),
-
-    # command
 ]
