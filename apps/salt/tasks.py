@@ -22,7 +22,7 @@ from autoadmin.settings import BROKER_URL, CELERY_RESULT_BACKEND
 app = Celery('task', broker=BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
 
-@app.task()
+@app.task
 def minion_status():
     sapi = SaltAPI()
     minions_status = sapi.runner("manage.status")
@@ -48,5 +48,6 @@ def minion_status():
         except Exception as e:
             logger.error(e.args)
             pass
+
 
 minion_status()

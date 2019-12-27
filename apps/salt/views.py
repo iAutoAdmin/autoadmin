@@ -3,8 +3,8 @@ from rest_framework import viewsets, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from salt.api import SaltAPI
-from salt.serializers import MinionStausSerializer
-from .models import Minions_status
+from salt.serializers import MinionStausSerializer, AclSerializer
+from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls
 from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
@@ -16,11 +16,52 @@ logger = logging.getLogger('default')
 
 class MinonStatusViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     """
-    list:
-    查看salt-minion的状态
+    list: 查看salt-minion的状态
     """
     serializer_class = MinionStausSerializer
-    queryset = Minions_status.objects.all()
+    queryset = MinionsStatus.objects.all()
+
+
+class AclViewSet(viewsets.ModelViewSet):
+    """
+    list: 获取ACL列表名称
+    create: 添加salt拒绝权限名称
+    retrieve: 查看ACL名称
+    update: 更新ACL名称
+    partial_update: 部分更新ACL名称
+    destroy: 删除ACL名称
+    """
+    serializer_class = AclSerializer
+    permission_classes = []
+    queryset = SaltAcl.objects.all()
+
+
+class SlsViewSet(viewsets.ModelViewSet):
+    """
+    list: 获取salt状态文件列表名称
+    create: 添加salt状态文件
+    retrieve: 查看salt状态文件名称
+    update: 更新salt状态文件名称
+    partial_update: 部分更新salt状态文件名称
+    destroy: 删除salt状态文件名称
+    """
+    serializer_class = AclSerializer
+    permission_classes = []
+    queryset = SaltSls.objects.all()
+
+
+class MdlViewSet(viewsets.ModelViewSet):
+    """
+    list: 获取salt模块列表名称
+    create: 添加salt模块
+    retrieve: 查看salt模块名称
+    update: 更新salt模块名称
+    partial_update: 部分更新salt模块名称
+    destroy: 删除salt模块件名称
+    """
+    serializer_class = AclSerializer
+    permission_classes = []
+    queryset = SaltMdl.objects.all()
 
 
 class ListKeyView(APIView):
@@ -61,9 +102,9 @@ class AddKeyView(APIView):
 
     def check_object(self, hostname):
         try:
-            obj = Minions_status.objects.get(minion_id=hostname)
+            obj = MinionsStatus.objects.get(minion_id=hostname)
             return obj.minion_id
-        except Minions_status.DoesNotExist:
+        except MinionsStatus.DoesNotExist:
             # raise Http404
             contenxt = hostname + " doesn't exist"
             raise APIException(contenxt)
@@ -90,9 +131,9 @@ class RejectKeyView(APIView):
 
     def check_object(self, hostname):
         try:
-            obj = Minions_status.objects.get(minion_id=hostname)
+            obj = MinionsStatus.objects.get(minion_id=hostname)
             return obj.minion_id
-        except Minions_status.DoesNotExist:
+        except MinionsStatus.DoesNotExist:
             contenxt = hostname + " doesn't exist"
             raise APIException(contenxt)
 
@@ -118,9 +159,9 @@ class DeleteKeyView(APIView):
 
     def check_object(self, hostname):
         try:
-            obj = Minions_status.objects.get(minion_id=hostname)
+            obj = MinionsStatus.objects.get(minion_id=hostname)
             return obj.minion_id
-        except Minions_status.DoesNotExist:
+        except MinionsStatus.DoesNotExist:
             contenxt = hostname + " doesn't exist"
             raise APIException(contenxt)
 
@@ -223,8 +264,7 @@ class JobsDetailView(APIView):
 
 class JobsScheduleView(APIView):
     """
-    get:
-    查看定时任务
+    get: 查看定时任务
     """
 
     def get(self, request):
