@@ -1,15 +1,16 @@
-import coreapi
 from rest_framework import viewsets, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from salt.api import SaltAPI
 from salt.serializers import MinionStausSerializer, AclSerializer, ArgSerializer, SlsSerializer, MdlSerializer
 from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg
+from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter
 from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
 import logging
 import json
+import coreapi
 
 logger = logging.getLogger('default')
 
@@ -32,8 +33,9 @@ class AclViewSet(viewsets.ModelViewSet):
     destroy: 删除ACL名称
     """
     serializer_class = AclSerializer
-    permission_classes = []
     queryset = SaltAcl.objects.all()
+    filter_class = SaltAclFilter
+    search_fields = ['name', 'deny']
 
 
 class SlsViewSet(viewsets.ModelViewSet):
@@ -48,6 +50,8 @@ class SlsViewSet(viewsets.ModelViewSet):
     serializer_class = SlsSerializer
     permission_classes = []
     queryset = SaltSls.objects.all()
+    filter_class = SaltSlsFilter
+    search_fields = ['name']
 
 
 class MdlViewSet(viewsets.ModelViewSet):
@@ -62,6 +66,8 @@ class MdlViewSet(viewsets.ModelViewSet):
     serializer_class = MdlSerializer
     permission_classes = []
     queryset = SaltMdl.objects.all()
+    filter_class = SaltMdlFilter
+    search_fields = ["name"]
 
 
 class ArgViewSet(viewsets.ModelViewSet):
@@ -76,6 +82,8 @@ class ArgViewSet(viewsets.ModelViewSet):
     serializer_class = ArgSerializer
     permission_classes = []
     queryset = SaltArg.objects.all()
+    filter_class = SaltArgFilter
+    search_fields = ["name"]
 
 
 class ListKeyView(APIView):

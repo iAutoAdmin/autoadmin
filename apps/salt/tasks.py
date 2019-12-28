@@ -6,7 +6,7 @@ import importlib
 import django
 import logging
 from salt.api import SaltAPI
-from salt.models import Minions_status
+from salt.models import MinionsStatus
 
 logger = logging.getLogger("error")
 pathname = os.path.dirname(os.path.abspath(__file__))
@@ -28,9 +28,9 @@ def minion_status():
     minions_status = sapi.runner("manage.status")
 
     for minion_id in minions_status['up']:
-        hostname = Minions_status()
+        hostname = MinionsStatus()
         try:
-            res = Minions_status.objects.filter(minion_id=minion_id)
+            res = MinionsStatus.objects.filter(minion_id=minion_id)
             if not res:
                 hostname.minion_id = minion_id
                 hostname.minion_status = "up"
@@ -38,9 +38,9 @@ def minion_status():
         except Exception as e:
             logger.error(e.args)
     for minion_id in minions_status['down']:
-        hostname = Minions_status()
+        hostname = MinionsStatus()
         try:
-            res = Minions_status.objects.filter(minion_id=minion_id)
+            res = MinionsStatus.objects.filter(minion_id=minion_id)
             if not res:
                 hostname.minion_id = minion_id
                 hostname.minion_status = "down"

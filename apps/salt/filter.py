@@ -1,24 +1,46 @@
 import django_filters
-from pms.models import PerAppName, Permission
+from .models import SaltArg, SaltMdl, SaltSls, SaltAcl
 
 
-class PerAppNameFilter(django_filters.FilterSet):
+class SaltSlsFilter(django_filters.FilterSet):
     """
-    AppName 搜索类
+    搜索状态文件名称
     """
-    app_name = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤app名称')
+    name = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤状态文件名称')
 
     class Meta:
-        model = PerAppName
-        fields = ['app_name']
+        model = SaltSls
+        fields = ['name']
 
 
-class PermissionFilter(django_filters.FilterSet):
+class SaltArgFilter(django_filters.FilterSet):
     """
-    Permission 搜索类
+    搜索模块参数
     """
-    codename = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤权限名称')
+    name = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤参数名称')
 
     class Meta:
-        model = Permission
-        fields = ['codename']
+        model = SaltArg
+        fields = ['name']
+
+
+class SaltMdlFilter(django_filters.FilterSet):
+    """
+    搜索模块名称
+    """
+    name = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤模块名称')
+
+    class Meta:
+        model = SaltMdl
+        fields = ['name']
+
+
+class SaltAclFilter(django_filters.FilterSet):
+    """
+    搜索模块名称
+    """
+    name = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤ACL名称')
+
+    class Meta:
+        model = SaltAcl
+        fields = ['name', 'deny']
