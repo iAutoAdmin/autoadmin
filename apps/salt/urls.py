@@ -1,5 +1,5 @@
 from rest_framework.routers import DefaultRouter
-from .views import ListKeyView, AddKeyView, AclViewSet, SlsViewSet, MdlViewSet, MinonStatusViewSet, RejectKeyView, DeleteKeyView, JobsHistoryView, \
+from .views import ListKeyView, AddKeyView, AclViewSet, SlsViewSet, MdlViewSet, ArgViewSet, MinonStatusViewSet, RejectKeyView, DeleteKeyView, JobsHistoryView, \
     JobsActiveView, JobsKillView, JobsScheduleView, JobsDetailView, GrainsView, PillarView
 from django.conf.urls import include, url
 
@@ -8,12 +8,12 @@ salt_router.register(r'minion/status', MinonStatusViewSet, base_name="minion_sta
 salt_router.register(r'acl', AclViewSet, base_name="salt_acl")
 salt_router.register(r'sls', SlsViewSet, base_name="salt_sls")
 salt_router.register(r'mdl', MdlViewSet, base_name="salt_mdl")
-salt_router.register(r'arg', MdlViewSet, base_name="salt_arg")
+salt_router.register(r'arg', ArgViewSet, base_name="salt_arg")
 
 urlpatterns = [
     url(r'^', include(salt_router.urls)),
     # key管理
-    url(r'^key/$', ListKeyView.as_view()),
+    url(r'^key/$', ListKeyView.as_view(),),
     url(r'^key/add/$', AddKeyView.as_view()),
     url(r'^key/reject/$', RejectKeyView.as_view()),
     url(r'^key/delete/$', DeleteKeyView.as_view()),

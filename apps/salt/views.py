@@ -4,13 +4,14 @@ from rest_framework.response import Response
 from salt.api import SaltAPI
 from salt.serializers import MinionStausSerializer, AclSerializer, ArgSerializer, SlsSerializer, MdlSerializer
 from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg
-from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter
+from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter, MinionStatusFilter
 from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
 import logging
 import json
 import coreapi
+import re
 
 logger = logging.getLogger('default')
 
@@ -21,6 +22,8 @@ class MinonStatusViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     """
     serializer_class = MinionStausSerializer
     queryset = MinionsStatus.objects.all()
+    filter_class = MinionStatusFilter
+    search_fields = ['minion_id', 'minion_status']
 
 
 class AclViewSet(viewsets.ModelViewSet):
@@ -72,12 +75,12 @@ class MdlViewSet(viewsets.ModelViewSet):
 
 class ArgViewSet(viewsets.ModelViewSet):
     """
-    list: 获取cmd.run模块参数列表
-    create: 添加cmd.run模块参数
-    retrieve: 查看cmd.run模块参数
-    update: 更新cmd.run模块参数
-    partial_update: 部分cmd.run模块参数
-    destroy: 删除cmd.run模块参数
+    list: 获取模块参数列表
+    create: 添加模块参数
+    retrieve: 查看模块参数
+    update: 更新模块参数
+    partial_update: 部分模块参数
+    destroy: 删除模块参数
     """
     serializer_class = ArgSerializer
     permission_classes = []
@@ -91,10 +94,32 @@ class ListKeyView(APIView):
     列出所有的key
     """
 
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='hostname', required=False, location='query', description='主机名称', type='sting'),
+        ]
+    )
+
     def get(self, request, *args, **kwargs):
+        hostname = request.query_params.get('hostname', None)
         sapi = SaltAPI()
         result = sapi.list_all_key()
         minion_key = []
+        if hostname:
+            for minions_rejected in result.get("minions_rejected"):
+                if self.filter_hostname(hostname, minions_rejected):
+                    minion_key.append({"minions_status": "Accepted", "minions_id": minions_rejected})
+            for minions_denied in result.get("minions_denied"):
+                if self.filter_hostname(hostname, minions_denied):
+                    minion_key.append({"minions_status": "Accepted", "minions_id": minions_denied})
+            for minions in result.get("minions"):
+                if self.filter_hostname(hostname, minions):
+                    minion_key.append({"minions_status": "Accepted", "minions_id": minions})
+            for minions_pre in result.get("minions_pre"):
+                if self.filter_hostname(hostname, minions_pre):
+                    minion_key.append({"minions_status": "Accepted", "minions_id": minions_pre})
+            return Response({"data": minion_key, "status": True, "message": ""}, 200)
+
         if isinstance(result, dict):
             if result.get("status") is False:
                 return result, 500
@@ -109,6 +134,10 @@ class ListKeyView(APIView):
         else:
             logger.error("Get minion key error: %s" % result)
         return Response({"data": minion_key, "status": True, "message": ""}, 200)
+
+    def filter_hostname(self, hostname, minion_id):
+        if re.search(hostname, minion_id):
+            return True
 
 
 class AddKeyView(APIView):
