@@ -64,3 +64,19 @@ class MinionsStatus(models.Model):
 
     def __unicode__(self):
         return u'%s %s' % (self.minion_id, self.minion_status)
+
+
+class CmdHistory(models.Model):
+    TYPE_STATUS = (
+        (0, u'shell'),
+        (1, u'state'),
+    )
+    minion_ids = models.TextField(blank=True, null=True, verbose_name=u'主机列表')
+    command = models.TextField(blank=True, null=True, verbose_name=u'salt命令')
+    type = models.CharField(max_length=2, choices=TYPE_STATUS, default=0, verbose_name="操作类型")
+    executor = models.CharField(max_length=32, verbose_name="执行人")
+    execute_time = models.DateTimeField('执行时间', default=timezone.now)
+
+    class Meta:
+        db_table = "salt_cmd_history"
+        verbose_name = "salt操作"

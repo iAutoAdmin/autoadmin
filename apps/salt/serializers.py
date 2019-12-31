@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg
+from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg, CmdHistory
 import django.utils.timezone as timezone
 
 
@@ -65,4 +65,15 @@ class ArgSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SaltArg
+        fields = '__all__'
+
+
+class CmdHistorySerializer(serializers.ModelSerializer):
+    """
+    commond命令历史记录序列化类
+    """
+    execute_time = serializers.DateTimeField(read_only=True, default=timezone.now)
+
+    class Meta:
+        model = CmdHistory
         fields = '__all__'

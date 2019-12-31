@@ -1,17 +1,18 @@
-from rest_framework import viewsets, mixins
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from salt.api import SaltAPI
-from salt.serializers import MinionStausSerializer, AclSerializer, ArgSerializer, SlsSerializer, MdlSerializer
-from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg
-from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter, MinionStatusFilter
-from django.http import Http404
-from rest_framework.schemas import AutoSchema
-from rest_framework.exceptions import APIException
 import logging
 import json
 import coreapi
 import re
+from rest_framework import viewsets, mixins
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from salt.api import SaltAPI
+from salt.serializers import MinionStausSerializer, AclSerializer, ArgSerializer, SlsSerializer, MdlSerializer, \
+    CmdHistorySerializer
+from .models import MinionsStatus, SaltAcl, SaltMdl, SaltSls, SaltArg, CmdHistory
+from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter, MinionStatusFilter, HistoryFilter
+from django.http import Http404
+from rest_framework.schemas import AutoSchema
+from rest_framework.exceptions import APIException
 
 logger = logging.getLogger('default')
 
@@ -89,6 +90,17 @@ class ArgViewSet(viewsets.ModelViewSet):
     search_fields = ["name"]
 
 
+class CmdHistoryViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """
+    list: 记录历史执行命令
+    """
+    serializer_class = CmdHistorySerializer
+    permission_classes = []
+    queryset = CmdHistory.objects.all()
+    filter_class = HistoryFilter
+    search_fields = ['command', "type", 'executor']
+
+
 class ListKeyView(APIView):
     """
     列出所有的key
@@ -96,14 +108,14 @@ class ListKeyView(APIView):
 
     schema = AutoSchema(
         manual_fields=[
-            coreapi.Field(name='hostname', required=False, location='query', description='主机名称', type='sting'),
+            coreapi.Field(name='hostname', required=False, location='query', description='过滤主机名', type='sting'),
         ]
     )
 
     def get(self, request, *args, **kwargs):
         hostname = request.query_params.get('hostname', None)
-        sapi = SaltAPI()
-        result = sapi.list_all_key()
+        salt_api = SaltAPI()
+        result = salt_api.list_all_key()
         minion_key = []
         if hostname:
             for minions_rejected in result.get("minions_rejected"):
@@ -164,8 +176,8 @@ class AddKeyView(APIView):
         hostnames = request.data.get('hostname', None)
         for hostname in hostnames:
             minion_id = self.check_object(hostname)
-            sapi = SaltAPI()
-            sapi.accept_key(minion_id)
+            salt_api = SaltAPI()
+            salt_api.accept_key(minion_id)
         return Response({"status": 1})
 
 
@@ -192,8 +204,8 @@ class RejectKeyView(APIView):
         hostnames = request.data.get('hostname', None)
         for hostname in hostnames:
             minion_id = self.check_object(hostname)
-            sapi = SaltAPI()
-            sapi.reject_key(minion_id)
+            salt_api = SaltAPI()
+            salt_api.reject_key(minion_id)
         return Response({"status": 1})
 
 
@@ -220,8 +232,8 @@ class DeleteKeyView(APIView):
         hostnames = request.data.get('hostname', None)
         for hostname in hostnames:
             minion_id = self.check_object(hostname)
-            sapi = SaltAPI()
-            sapi.delete_key(minion_id)
+            salt_api = SaltAPI()
+            salt_api.delete_key(minion_id)
         return Response({"status": 1})
 
 
@@ -231,8 +243,8 @@ class JobsHistoryView(APIView):
     """
 
     def get(self, request):
-        sapi = SaltAPI()
-        jids = sapi.runner("jobs.list_jobs")
+        salt_api = SaltAPI()
+        jids = salt_api.runner("jobs.list_jobs")
         return Response(jids)
 
 
@@ -244,8 +256,8 @@ class JobsActiveView(APIView):
 
     def get(self, request):
         job_active_list = []
-        sapi = SaltAPI()
-        result = sapi.runner("jobs.active")
+        salt_api = SaltAPI()
+        result = salt_api.runner("jobs.active")
         if request:
             for jid, info in result.items():
                 # 不能直接把info放到append中
@@ -283,8 +295,8 @@ class JobsKillView(APIView):
                                          awk '{print "kill -- -"$2}'|sh''' % ppid
                     try:
                         # 通过kill -- -pgid 删除salt 相关的父进程及子进程
-                        sapi = SaltAPI()
-                        pid_result = sapi.shell_remote_execution(minion_id, kill_ppid_pid)
+                        salt_api = SaltAPI()
+                        pid_result = salt_api.shell_remote_execution(minion_id, kill_ppid_pid)
                         logger.info("kill %s %s return: %s" % (minion, kill_ppid_pid, pid_result))
                     except Exception as e:
                         logger.info("kill %s %s error: %s" % (minion, jid, e))
@@ -308,8 +320,8 @@ class JobsDetailView(APIView):
 
     def get(self, request, *args, **kwargs):
         jid = request.query_params.get('jid', None)
-        sapi = SaltAPI()
-        result = sapi.jobs_info(jid)
+        salt_api = SaltAPI()
+        result = salt_api.jobs_info(jid)
         return Response(result)
 
 
@@ -319,8 +331,8 @@ class JobsScheduleView(APIView):
     """
 
     def get(self, request):
-        sapi = SaltAPI()
-        result = sapi.runner("jobs.active")
+        salt_api = SaltAPI()
+        result = salt_api.runner("jobs.active")
         return Response(result)
 
 
@@ -338,8 +350,8 @@ class GrainsView(APIView):
 
     def post(self, request):
         minion_ids = request.data.get('minion_ids', None)
-        sapi = SaltAPI()
-        result = sapi.sync_grains(minion_ids)
+        salt_api = SaltAPI()
+        result = salt_api.sync_grains(minion_ids)
         return Response(result)
 
 
@@ -357,6 +369,101 @@ class PillarView(APIView):
 
     def post(self, request):
         minion_ids = request.data.get('minion_ids', None)
-        sapi = SaltAPI()
-        result = sapi.sync_grains(minion_ids)
+        salt_api = SaltAPI()
+        result = salt_api.sync_grains(minion_ids)
         return Response(result)
+
+
+class ExecuteView(APIView):
+    """
+    post: salt命令执行主函数
+    """
+
+    schema = AutoSchema(
+        manual_fields=[
+            coreapi.Field(name='service_name', required='', location='form', description='服务名称',
+                          type='array'),
+            coreapi.Field(name='hostname', required='', location='form', description='salt_minion_id',
+                          type='array'),
+            coreapi.Field(name='salt_sls', required='', location='form', description='salt状态文件名称',
+                          type='string'),
+            coreapi.Field(name='salt_mdl', required='', location='form', description='salt模块名称',
+                          type='string'),
+            coreapi.Field(name='salt_arg', required='', location='form', description='salt参数名称',
+                          type='string'),
+        ]
+    )
+
+    def post(self, request):
+        service_name = request.data.get('service_name', None)
+        hostname = request.data.get('hostname', None)
+        salt_sls = request.data.get('salt_sls', None)
+        salt_mdl = request.data.get('salt_mdl', None)
+        salt_arg = request.data.get('salt_arg', None)
+        executor = request.user
+        if hostname:
+            res = self.salt_exec(hostname, salt_sls, salt_mdl, salt_arg, executor)
+            return Response(res)
+
+    def salt_exec(self, hostname, salt_sls, salt_mdl, salt_arg, executor):
+        salt_api = SaltAPI()
+        if salt_mdl:
+            if salt_mdl == "test.ping":
+                result = salt_api.remote_noarg_execution(hostname, salt_mdl)
+                return self.check_minion_err(hostname, salt_mdl, salt_arg, result, executor)
+            else:
+                # 权限验证
+                # if not self.check_acl(salt_arg):
+                #     return {"status": False, "message": "Deny Warning : You don't have permission run %s" % salt_arg}
+                result = salt_api.shell_remote_execution(hostname, salt_arg)
+                logger.info('salt执行:%s,%s,%s' % (executor, hostname, salt_arg))
+                return self.check_minion_err(hostname, salt_mdl, salt_arg, result, executor)
+
+    def check_minion_err(self, hostname, salt_mdl, salt_arg, result, executor):
+        fail_minion = []
+        for minion in result:
+            try:
+                if result[minion] is False or "response" in result[minion]:
+                    fail_minion.append(minion)
+            except Exception as e:
+                logging.info(e.args)
+        if salt_arg:
+            command = salt_mdl + " " + salt_arg
+        else:
+            command = salt_mdl
+
+        cmd_obj = CmdHistory()
+        cmd_obj.minion_ids = ",".join(hostname)
+        cmd_obj.command = command
+        cmd_obj.type = 0
+        cmd_obj.executor = executor
+        cmd_obj.save()
+
+        # 计算成功和失败的主机数目
+        cmd_counts = len(hostname)
+        cmd_succeed = len(hostname) - len(fail_minion)
+        cmd_failure = len(fail_minion)
+        print(cmd_counts, cmd_succeed, cmd_failure)
+
+        if result.get("status") is False:
+            status = False
+            message = result.get('message')
+        else:
+            status = True
+            message = ""
+        return {"data":
+                    {"result": result,
+                     "cmd": command,
+                     "total": cmd_counts,
+                     "succeed": cmd_succeed,
+                     "failure": cmd_failure,
+                     "failure_minion": fail_minion}, "status": status, "message": message}
+
+    def check_acl(self, salt_arg):
+        acl_deny = SaltAcl.objects.all()
+        for deny in acl_deny:
+            deny_command = deny.deny.replace(" ", '')
+            real_command = salt_arg.replace(" ", '')
+            if deny_command == real_command or deny_command in real_command:
+                return False
+        return True

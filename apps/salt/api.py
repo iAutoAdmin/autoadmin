@@ -84,17 +84,17 @@ class SaltAPI(object):
 
     def remote_noarg_execution(self, tgt, fun):
         # Execute commands without parameters
-        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'expr_form': 'list'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
-            ret = content['return'][0][tgt]
+            ret = content['return'][0]
             return ret
         else:
             return {"status": False, "message": "Salt API Error : " + content}
 
     def remote_noarg_execution_notgt(self, tgt, fun):
         # Execute commands without parameters
-        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'expr_form': 'list'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
             ret = content['return'][0]
@@ -104,7 +104,7 @@ class SaltAPI(object):
 
     def remote_execution(self, tgt, fun, arg):
         # Command execution with parameters
-        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'expr_form': 'list'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
             ret = content['return'][0][tgt]
@@ -114,7 +114,7 @@ class SaltAPI(object):
 
     def remote_execution_notgt(self, tgt, fun, arg):
         # Command execution with parameters
-        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'expr_form': 'list'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
             ret = content['return'][0]
@@ -124,7 +124,7 @@ class SaltAPI(object):
 
     def shell_remote_execution(self, tgt, arg):
         # Shell command execution with parameters
-        params = {'client': 'local', 'tgt': tgt, 'fun': 'cmd.run', 'arg': arg, 'expr_form': 'list'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': 'cmd.run', 'arg': arg, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
             ret = content['return'][0]
@@ -164,7 +164,7 @@ class SaltAPI(object):
 
     def target_remote_execution(self, tgt, fun, arg):
         # Use targeting for remote execution
-        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'expr_form': 'nodegroup'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': fun, 'arg': arg, 'tgt_type': 'nodegroup'}
         content = self.post_request(params)
         if isinstance(content, dict):
             jid = content['return'][0]['jid']
@@ -190,7 +190,7 @@ class SaltAPI(object):
 
     def target_deploy(self, tgt, arg):
         # Based on the list forms deployment
-        params = {'client': 'local', 'tgt': tgt, 'fun': 'state.sls', 'arg': arg, 'expr_form': 'list'}
+        params = {'client': 'local', 'tgt': tgt, 'fun': 'state.sls', 'arg': arg, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
             try:
@@ -203,9 +203,9 @@ class SaltAPI(object):
     def pillar_items(self, tgt, arg=[]):
         # Get pillar item
         if arg:
-            params = {'client': 'local', 'tgt': tgt, 'fun': 'pillar.item', 'arg': arg, 'expr_form': 'list'}
+            params = {'client': 'local', 'tgt': tgt, 'fun': 'pillar.item', 'arg': arg, 'tgt_type': 'list'}
         else:
-            params = {'client': 'local', 'tgt': tgt, 'fun': 'pillar.items', 'arg': arg, 'expr_form': 'list'}
+            params = {'client': 'local', 'tgt': tgt, 'fun': 'pillar.items', 'arg': arg, 'tgt_type': 'list'}
         content = self.post_request(params)
         if isinstance(content, dict):
             try:

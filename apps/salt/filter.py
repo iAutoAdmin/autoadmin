@@ -1,6 +1,6 @@
 import coreapi
 import django_filters
-from .models import SaltArg, SaltMdl, SaltSls, SaltAcl, MinionsStatus
+from .models import SaltArg, SaltMdl, SaltSls, SaltAcl, MinionsStatus, CmdHistory
 from rest_framework import filters
 from rest_framework.schemas import AutoSchema
 
@@ -59,6 +59,20 @@ class SaltAclFilter(django_filters.FilterSet):
     class Meta:
         model = SaltAcl
         fields = ['name', 'deny']
+
+
+class HistoryFilter(django_filters.FilterSet):
+    """
+    搜索模块名称
+    """
+    type = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤ACL名称')
+    executor = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤执行人')
+    command = django_filters.CharFilter(lookup_expr='icontains', help_text='过滤历史命令')
+
+    class Meta:
+        model = CmdHistory
+        fields = ['type', 'command', 'executor']
+
 
 
 # class CustomFilter(filters.BaseFilterBackend):
