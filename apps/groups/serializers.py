@@ -54,15 +54,15 @@ class GroupSerializer(serializers.ModelSerializer):
             ret.append(u.username)
         return ret
 
-    # def to_representation(self, instance):
-    #     nodes = self.get_node(instance.node_group.all())
-    #     permissions = self.get_permissions(instance.pms_group.all())
-    #     member = self.get_users(instance.user_set.all())
-    #     ret = super(GroupSerializer, self).to_representation(instance)
-    #     ret["nodes"] = nodes
-    #     ret["permissions"] = permissions
-    #     ret["member"] = member
-    #     return ret
+    def to_representation(self, instance):
+        nodes = self.get_node(instance.node_group.all())
+        permissions = self.get_permissions(instance.pms_group.all())
+        member = self.get_users(instance.user_set.all())
+        ret = super(GroupSerializer, self).to_representation(instance)
+        # ret["nodes"] = nodes
+        ret["permissions"] = permissions
+        ret["member"] = member
+        return ret
 
     class Meta:
         model = Group

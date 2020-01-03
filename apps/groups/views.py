@@ -19,18 +19,12 @@ class GroupViewset(mixins.CreateModelMixin,
                    mixins.ListModelMixin,
                    viewsets.GenericViewSet):
     """
-    list:
-    获取用户组列表
-    create:
-    添加组
-    retrieve:
-    查看组名称
-    update:
-    修改组名称
-    partial_update:
-    修改组名称
-    destroy:
-    删除组名称
+    list: 获取用户组列表
+    create: 添加组
+    retrieve: 查看组名称
+    update: 修改组名称
+    partial_update: 修改组名称
+    destroy: 删除组名称
     """
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
@@ -45,17 +39,12 @@ class GroupViewset(mixins.CreateModelMixin,
 
 class GroupMembersViewset(viewsets.GenericViewSet):
     """
-    组成员管理
-    retrieve:
-    返回指定组的成员列表
-    update:
-    往指定组里添加成员
-    destroy:
-    从指定组里删除成员
+    retrieve: 返回指定组的成员列表
+    update: 往指定组里添加成员
+    destroy: 从指定组里删除成员
     """
     serializer_class = GroupMembersSerizlizer
     queryset = Group.objects.all()
-
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -87,14 +76,10 @@ class GroupMembersViewset(viewsets.GenericViewSet):
 
 class GroupPermissionViewset(viewsets.GenericViewSet):
     """
-    retrieve:
-    返回指定组的权限列表
-    update:
-    向指定组里添加权限
-    partial_update:
-    向指定组里添加权限
-    destroy:
-    从指定组里删除权限
+    retrieve: 返回指定组的权限列表
+    update: 向指定组里添加权限
+    partial_update: 向指定组里添加权限
+    destroy: 从指定组里删除权限
     """
     queryset = Group.objects.all()
     serializer_class = GroupPermissionSerizlizer
