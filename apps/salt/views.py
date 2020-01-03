@@ -413,8 +413,8 @@ class ExecuteView(APIView):
                 return self.check_minion_err(hostname, salt_mdl, salt_arg, result, executor)
             else:
                 # 权限验证
-                # if not self.check_acl(salt_arg):
-                #     return {"status": False, "message": "Deny Warning : You don't have permission run %s" % salt_arg}
+                if not self.check_acl(salt_arg):
+                    return {"status": False, "message": "Deny Warning : You don't have permission run %s" % salt_arg}
                 result = salt_api.shell_remote_execution(hostname, salt_arg)
                 logger.info('salt执行:%s,%s,%s' % (executor, hostname, salt_arg))
                 return self.check_minion_err(hostname, salt_mdl, salt_arg, result, executor)
