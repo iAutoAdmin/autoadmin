@@ -404,22 +404,34 @@ class ExecuteView(APIView):
         if hostname:
             res = self.salt_exec(hostname, salt_sls, salt_mdl, salt_arg, executor)
             return Response(res)
+        # 根据service_name查询出对应的主机名
+        if service_name:
+            pass
 
-    def salt_exec(self, hostname, salt_sls, salt_mdl, salt_arg, executor):
+    def salt_exec(self, minion_ids, salt_sls, salt_mdl, salt_arg, executor):
         salt_api = SaltAPI()
         if salt_mdl:
+            salt_type = 0
             if salt_mdl == "test.ping":
-                result = salt_api.remote_noarg_execution(hostname, salt_mdl)
-                return self.check_minion_err(hostname, salt_mdl, salt_arg, result, executor)
+                result = salt_api.remote_noarg_execution(minion_ids, salt_mdl)
+                return self.check_minion_err(minion_ids, salt_mdl, salt_arg, result, executor, salt_type)
             else:
                 # 权限验证
                 if not self.check_acl(salt_arg):
                     return {"status": False, "message": "Deny Warning : You don't have permission run %s" % salt_arg}
-                result = salt_api.shell_remote_execution(hostname, salt_arg)
-                logger.info('salt执行:%s,%s,%s' % (executor, hostname, salt_arg))
-                return self.check_minion_err(hostname, salt_mdl, salt_arg, result, executor)
+                result = salt_api.shell_remote_execution(minion_ids, salt_arg)
+                logger.info('salt执行:%s,%s,%s' % (executor, minion_ids, salt_arg))
+                return self.check_minion_err(minion_ids, salt_mdl, salt_arg, result, executor, salt_type)
 
-    def check_minion_err(self, hostname, salt_mdl, salt_arg, result, executor):
+        if salt_sls:
+            salt_type = 1
+            state_sls = "init." + salt_sls
+            result = salt_api.target_deploy(minion_ids, state_sls)
+            print(result)
+            logger.info('salt执行:%s,%s,%s' % (executor, minion_ids, state_sls))
+            return self.check_minion_err(minion_ids, state_sls, salt_arg, result, executor, salt_type)
+
+    def check_minion_err(self, minion_ids, salt_mdl, salt_arg, result, executor, salt_type):
         fail_minion = []
         for minion in result:
             try:
@@ -431,19 +443,18 @@ class ExecuteView(APIView):
             command = salt_mdl + " " + salt_arg
         else:
             command = salt_mdl
-
         cmd_obj = CmdHistory()
-        cmd_obj.minion_ids = ",".join(hostname)
+        cmd_obj.minion_ids = ",".join(minion_ids)
         cmd_obj.command = command
-        cmd_obj.type = 0
+        cmd_obj.type = salt_type
         cmd_obj.executor = executor
         cmd_obj.save()
 
         # 计算成功和失败的主机数目
-        cmd_counts = len(hostname)
-        cmd_succeed = len(hostname) - len(fail_minion)
+        cmd_counts = len(minion_ids)
+        cmd_succeed = len(minion_ids) - len(fail_minion)
         cmd_failure = len(fail_minion)
-        print(cmd_counts, cmd_succeed, cmd_failure)
+        # print(cmd_counts, cmd_succeed, cmd_failure)
 
         if result.get("status") is False:
             status = False
