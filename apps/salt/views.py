@@ -1,4 +1,3 @@
-import logging
 import json
 import coreapi
 import re
@@ -13,8 +12,8 @@ from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter, 
 from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
-
-logger = logging.getLogger('default')
+import logging
+logger = logging.getLogger('views')
 
 
 class MinonStatusViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
@@ -414,20 +413,20 @@ class ExecuteView(APIView):
             salt_type = 0
             if salt_mdl == "test.ping":
                 result = salt_api.remote_noarg_execution(minion_ids, salt_mdl)
+                logger.info('salt执行:%s,%s,%s' % (executor, minion_ids, salt_arg))
                 return self.check_minion_err(minion_ids, salt_mdl, salt_arg, result, executor, salt_type)
             else:
                 # 权限验证
                 if not self.check_acl(salt_arg):
                     return {"status": False, "message": "Deny Warning : You don't have permission run %s" % salt_arg}
                 result = salt_api.shell_remote_execution(minion_ids, salt_arg)
-                logger.info('salt执行:%s,%s,%s' % (executor, minion_ids, salt_arg))
+                logger.info('salt执行:%s,%s,%s,%s' % (executor, minion_ids, salt_mdl, salt_arg))
                 return self.check_minion_err(minion_ids, salt_mdl, salt_arg, result, executor, salt_type)
 
         if salt_sls:
             salt_type = 1
             state_sls = "init." + salt_sls
             result = salt_api.target_deploy(minion_ids, state_sls)
-            print(result)
             logger.info('salt执行:%s,%s,%s' % (executor, minion_ids, state_sls))
             return self.check_minion_err(minion_ids, state_sls, salt_arg, result, executor, salt_type)
 
@@ -438,7 +437,7 @@ class ExecuteView(APIView):
                 if result[minion] is False or "response" in result[minion]:
                     fail_minion.append(minion)
             except Exception as e:
-                logging.info(e.args)
+                logging.error(e.args)
         if salt_arg:
             command = salt_mdl + " " + salt_arg
         else:
