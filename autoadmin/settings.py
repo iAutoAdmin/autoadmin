@@ -88,7 +88,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'autoadmin',
         'USER': 'root',
-        'PASSWORD': 'lixiang123',
+        'PASSWORD': '123456',
         'HOST': '127.0.0.1',
         'PORT': 3306,
         'OPTIONS': {
@@ -141,7 +141,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ),
     # 'DEFAULT_PAGINATION_CLASS': 'autoadmin.paginations.Pagination',
     'PAGE_SIZE': 10
@@ -155,8 +155,8 @@ ACCESSSECRET = os.environ.get("ACCESSSECRET", '')
 
 # salt_api
 SALT_URL = 'http://192.168.1.58:8000'
-SALT_USER = 'test'
-SALT_PASSWORD = 'test1234'
+SALT_USER = 'saltapi'
+SALT_PASSWORD = 'Boss2018salt'
 
 # redis
 REDIS_HOST = '127.0.0.1'
@@ -212,10 +212,125 @@ CELERYBEAT_SCHEDULE = {
     'minion_status_task': {
         'task': 'salt.tasks.minion_status',
         # 'schedule': crontab(minute=u'40', hour=u'17',),
-        'schedule': timedelta(minutes=10),
+        'schedule': timedelta(seconds=60),
         'args': (),
         'options': {
             'queue': 'low',  # 指定要使用的队列
         }
     }
+}
+
+# LOG
+BASE_LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+LOGGING = {
+    'version': 1,  # 保留字
+    'disable_existing_loggers': False,  # 禁用已经存在的logger实例
+    # 日志文件的格式
+    'formatters': {
+        # 详细的日志格式
+        'standard': {
+            'format': '[%(asctime)s][%(threadName)s:%(thread)d][task_id:%(name)s][%(filename)s:%(lineno)d]'
+                      '[%(levelname)s][%(message)s]'
+        },
+        # 简单的日志格式
+        'simple': {
+            'format': '[%(levelname)s][%(asctime)s][%(filename)s:%(lineno)d]%(message)s'
+        },
+        # 定义一个特殊的日志格式
+        'collect': {
+            'format': '%(message)s'
+        }
+    },
+    # 过滤器
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    # 处理器
+    'handlers': {
+        # 在终端打印
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],  # 只有在Django debug为True时才在屏幕打印日志
+            'class': 'logging.StreamHandler',  #
+            'formatter': 'simple'
+        },
+        # 默认的
+        'default': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',  # 保存到文件，自动切
+            'filename': os.path.join(BASE_LOG_DIR, "autoadmin.info.log"),  # 日志文件
+            'maxBytes': 1024 * 1024 * 50,  # 日志大小 50M
+            'backupCount': 3,  # 最多备份几个
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        },
+        # 专门用来记错误日志
+        'error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',  # 保存到文件，自动切
+            'filename': os.path.join(BASE_LOG_DIR, "autoadmin.error.log"),  # 日志文件
+            'maxBytes': 1024 * 1024 * 50,  # 日志大小 50M
+            'backupCount': 5,
+            'formatter': 'standard',
+            'encoding': 'utf-8',
+        },
+        # 专门定义一个收集特定信息的日志
+        'collect': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',  # 保存到文件，自动切
+            'filename': os.path.join(BASE_LOG_DIR, "autoadmin.collect.log"),
+            'maxBytes': 1024 * 1024 * 50,  # 日志大小 50M
+            'backupCount': 5,
+            'formatter': 'collect',
+            'encoding': "utf-8"
+        },
+        'request_handler': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_LOG_DIR, "autoadmin.request.log"),
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 5,
+            'formatter': 'standard',
+        },
+        'scripts_handler': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_LOG_DIR, "autoadmin.scripts.log"),
+            'maxBytes': 1024 * 1024 * 5,
+            'backupCount': 5,
+            'formatter': 'standard',
+        }
+
+    },
+    'loggers': {
+        # 默认的logger应用如下配置
+        'django': {
+            'handlers': ['default'],
+            'level': 'DEBUG',   # 此等级要比handlers的日志等级低或相等
+            'propagate': False,  # 向不向更高级别的logger传递
+        },
+        'django.request': {
+            'handlers': ['request_handler'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'scripts': {
+            'handlers': ['scripts_handler'],
+            'level': 'INFO',
+            'propagate': False
+        },
+        'console': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+        'views': {
+            'handlers': ['default', 'error'],
+            'level': 'DEBUG',
+            'propagate': True
+        },
+    },
 }
