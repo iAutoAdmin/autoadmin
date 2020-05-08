@@ -12,6 +12,7 @@ from .filter import SaltAclFilter, SaltArgFilter, SaltMdlFilter, SaltSlsFilter, 
 from django.http import Http404
 from rest_framework.schemas import AutoSchema
 from rest_framework.exceptions import APIException
+from rest_framework.permissions import BasePermission
 import logging
 logger = logging.getLogger('views')
 
@@ -24,6 +25,9 @@ class MinonStatusViewSet(viewsets.GenericViewSet, mixins.ListModelMixin):
     queryset = MinionsStatus.objects.all()
     filter_class = MinionStatusFilter
     search_fields = ['minion_id', 'minion_status']
+    extra_perm_map = {
+        "GET": ['salt_admin', ]
+    }
 
 
 class AclViewSet(viewsets.ModelViewSet):

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'servicetree',
     'pms',
     'salt',
+    'orgs',
     'djcelery',
     'clouds',
 ]
@@ -88,7 +89,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'autoadmin',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': 'lixiang123',
         'HOST': '127.0.0.1',
         'PORT': 3306,
         'OPTIONS': {
@@ -142,6 +143,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+        # 'rest_framework.permissions.AllowAny',
     ),
     # 'DEFAULT_PAGINATION_CLASS': 'autoadmin.paginations.Pagination',
     'PAGE_SIZE': 10
